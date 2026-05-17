@@ -1,19 +1,15 @@
-&lt;div align="center"&gt;
-
-![:name](https://count.getloli.com/@group_verify_email_auto?name=group_verify_email_auto&amp;theme=capoo-1&amp;padding=7&amp;offset=0&amp;align=top&amp;scale=1&amp;pixelated=1&amp;darkmode=auto)
+![:name](https://count.getloli.com/@group_verify_email_auto?name=group_verify_email_auto&theme=capoo-1&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto)
 
 # 🛡️ QQ群邮箱验证码插件 · Group Verify Email Auto
 
-_✨ 基于邮箱验证码 + 数学题双模式入群验证插件 ✨_  
+_✨ 基于邮箱验证码 + 数学题双模式入群验证插件 ✨_
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![AstrBot](https://img.shields.io/badge/AstrBot-4.0%2B-orange.svg)](https://github.com/Soulter/AstrBot)
 [![GitHub](https://img.shields.io/badge/作者-感情-blue)](https://qm.qq.com/q/jpk9DM9Zo4)
 
-&lt;/div&gt;
-
-&gt; **基于邮箱验证码 + 数学题双模式入群验证插件**
-&gt; 自动使用QQ号构造邮箱，支持验证码图片、邮件背景图、数学题验证、自定义模板等多种验证方式
+> **基于邮箱验证码 + 数学题双模式入群验证插件**
+> 自动使用QQ号构造邮箱，支持验证码图片、邮件背景图、数学题验证、自定义模板等多种验证方式
 >
 > ✨ **版本**：v1.2 | 👤 **作者**：感情 | 📜 **协议**：MIT
 
@@ -392,24 +388,27 @@ _✨ 基于邮箱验证码 + 数学题双模式入群验证插件 ✨_
 ```
 group_verify_email_auto/
 ├── __init__.py                  # 插件入口
-├── main.py                      # 主逻辑
-├── admin_commands.py            # 管理员指令处理
-├── email_utils.py               # 邮件发送工具
-├── verification.py              # 验证逻辑
-├── email_template.html          # 邮件美化HTML模板
-├── log_email_template.html      # 日志邮件模板
-├── logger_setup.py              # 日志配置
-├── _conf_schema.json            # 配置项声明（已按类别分组）
-├── metadata.yaml                # 插件元信息
+├── src/                         # 源代码目录
+│   ├── main.py                  # 主逻辑
+│   ├── admin_commands.py        # 管理员指令处理
+│   ├── email_utils.py           # 邮件发送工具
+│   ├── verification.py          # 验证逻辑
+│   └── logger_setup.py          # 日志配置
+├── templates/                   # HTML模板目录
+│   ├── email_template.html      # 邮件美化HTML模板
+│   └── log_email_template.html  # 日志邮件模板
 ├── config/                      # 配置分类参考文件
 │   ├── README.md                # 分类说明
 │   ├── smtp.json                # SMTP配置
 │   ├── verification.json        # 验证配置
 │   ├── visual.json              # 视觉配置
 │   ├── templates.json           # 模板配置
-│   └── admin.json              # 管理配置
-├── LICENSE                      # MIT协议
-└── 文件格式路径.txt              # 文件说明
+│   └── admin.json               # 管理配置
+├── docs/                        # 文档目录
+│   ├── LICENSE                  # MIT协议
+│   └── 文件格式路径.txt         # 文件说明
+├── _conf_schema.json            # 配置项声明（已按类别分组）
+└── metadata.yaml                # 插件元信息
 ```
 
 ---
@@ -420,7 +419,7 @@ group_verify_email_auto/
 
 | 方式 | 说明 |
 |------|------|
-| ⭐ **Star** | [GitHub 仓库](https://github.com/huntuo146/astrbot_plugin_Group-Verification_PRO) |
+| ⭐ **Star** | [GitHub 仓库](https://github.com/YOYOFeelings/group_verify_email_auto) |
 | 🐛 **反馈** | 遇到问题请提 Issue |
 | 💬 **交流** | QQ群 `200317338` |
 | 🌟 **推荐** | 推荐给需要的群主/管理员 |
