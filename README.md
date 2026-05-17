@@ -1,10 +1,12 @@
+![:name](https://count.getloli.com/@group_verify_email_auto?name=group_verify_email_auto&theme=capoo-1&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto)
+
 # 🛡️ QQ群邮箱验证码插件 · Group Verify Email Auto
 
 _✨ 基于邮箱验证码 + 数学题双模式入群验证插件 ✨_
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![AstrBot](https://img.shields.io/badge/AstrBot-4.0%2B-orange.svg)](https://github.com/Soulter/AstrBot)
-[![GitHub](https://img.shields.io/badge/作者-感情-blue)](https://qm.qq.com/q/jpk9DM9Zo4)
+[![作者-感情](https://img.shields.io/badge/作者-感情-blue)](https://qm.qq.com/q/jpk9DM9Zo4)
 
 > **基于邮箱验证码 + 数学题双模式入群验证插件**
 > 自动使用QQ号构造邮箱，支持验证码图片、邮件背景图、数学题验证、自定义模板等多种验证方式
