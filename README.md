@@ -1,5 +1,3 @@
-![:name](https://count.getloli.com/@group_verify_email_auto?name=group_verify_email_auto&theme=capoo-1&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto)
-
 # 🛡️ QQ群邮箱验证码插件 · Group Verify Email Auto
 
 _✨ 基于邮箱验证码 + 数学题双模式入群验证插件 ✨_
@@ -11,7 +9,7 @@ _✨ 基于邮箱验证码 + 数学题双模式入群验证插件 ✨_
 > **基于邮箱验证码 + 数学题双模式入群验证插件**
 > 自动使用QQ号构造邮箱，支持验证码图片、邮件背景图、数学题验证、自定义模板等多种验证方式
 >
-> ✨ **版本**：v1.2 | 👤 **作者**：感情 | 📜 **协议**：MIT
+> ✨ **版本**：v1.5 | 👤 **作者**：感情 | 📜 **协议**：MIT
 
 ---
 

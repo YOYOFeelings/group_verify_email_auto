@@ -21,13 +21,13 @@ def _fix_newlines(s: str) -> str:
         return s
     return s.replace('\\n', '\n')
 
-@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.2",
-          "https://github.com/huntuo146/astrbot_plugin_Group-Verification_PRO")
+@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.5",
+          "https://github.com/YOYOFeelings/group_verify_email_auto")
 class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):
         super().__init__(context)
         self.context = context
-        logger.info("插件初始化开始 (v1.2 - 验证码图片 + 引用消息 + 群变量)")
+        logger.info("插件初始化开始 (v1.5 - 5种邮件模板选择)")
 
         def get_conf(key, default):
             val = config.get(key, default) if config else default
