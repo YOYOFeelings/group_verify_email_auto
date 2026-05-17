@@ -1,0 +1,7 @@
+name: group_verify_email_auto
+display_name: QQ群邮箱验证码插件
+author: 感情
+version: "1.1"
+description: >
+  基于邮箱验证码的入群验证插件，自动使用QQ号构造邮箱，
+  支持邮件背景图、入群欢迎图片、管理指令查看状态/配置/函数。

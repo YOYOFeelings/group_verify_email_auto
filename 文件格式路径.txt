@@ -1,0 +1,11 @@
+group_verify_email_auto/
+│
+├── main.py                 # 主控制类（仅事件调度与组装）
+├── _conf_schema.json
+├── metadata.yaml
+├── email_template.html
+│
+├── logger_setup.py         # 日志配置（文件 + 控制台）
+├── email_utils.py          # SMTP 发送（HTML / 带附件）
+├── admin_commands.py       # 管理员指令处理器
+└── verification.py         # 验证流程管理器（入群、答题、超时）

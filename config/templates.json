@@ -1,0 +1,59 @@
+{
+  "category": "📝 消息模板配置",
+  "description": "所有可自定义的入群提示、验证消息、邮件模板（支持变量替换）",
+  "available_variables": {
+    "{at_user}": "@用户",
+    "{member_name}": "用户昵称/群名片",
+    "{group_name}": "群名称",
+    "{group_member_count}": "群成员总数",
+    "{admin_list}": "管理员列表（用"、"连接）",
+    "{email}": "用户邮箱地址",
+    "{code}": "验证码",
+    "{timeout}": "超时分钟数",
+    "{countdown}": "踢出倒计时秒数",
+    "{bg_url}": "邮件背景图链接（仅邮件HTML可用）",
+    "{card_style}": "毛玻璃卡片样式CSS（仅邮件HTML可用）"
+  },
+  "templates": {
+    "trigger_prompt": {
+      "default": "{at_user} 欢迎加入本群！\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复任意消息以接收验证码到您的 QQ 邮箱。",
+      "description": "入群触发提示"
+    },
+    "mode_0_menu_prompt": {
+      "default": "{at_user} 欢迎加入本群！🎉\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复数字选择验证方式：\n1 - 邮箱验证\n2 - 数学题验证",
+      "description": "模式0(用户自选)入群菜单提示"
+    },
+    "email_sent_prompt": {
+      "default": "{at_user} 验证码已发送至 {email}\n请查看邮件并在群内 @我 回复数字验证码。",
+      "description": "验证码已发送提示"
+    },
+    "wrong_code_prompt": {
+      "default": "{at_user} 验证码错误，新的验证码已发送至 {email}\n请重新查看并回复。",
+      "description": "验证码错误提示"
+    },
+    "welcome_message": {
+      "default": "{at_user} 验证成功，欢迎你的加入！🎉\n本群当前共 {group_member_count} 位群友\n管理员：\n{admin_list}",
+      "description": "验证成功欢迎语"
+    },
+    "countdown_warning_prompt": {
+      "default": "{at_user} 验证即将超时，请尽快输入收到的验证码！",
+      "description": "超时警告"
+    },
+    "failure_message": {
+      "default": "{at_user} 验证超时，你将在 {countdown} 秒后被请出本群。",
+      "description": "超时最后通牒"
+    },
+    "kick_message": {
+      "default": "{at_user} 因未在规定时间内完成验证，已被请出本群。",
+      "description": "踢出公告"
+    },
+    "email_subject": {
+      "default": "{group_name} 入群验证码",
+      "description": "邮件主题"
+    },
+    "email_body_html": {
+      "default": "<h2>欢迎加入 {group_name}</h2><p>您好 {member_name}：</p><p>您的验证码为：<b style='color:blue'>{code}</b></p><p>请在 {timeout} 分钟内在群内 @我 并回复此验证码。</p>",
+      "description": "邮件HTML模板（支持完整HTML编辑）"
+    }
+  }
+}

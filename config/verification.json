@@ -1,0 +1,31 @@
+{
+  "category": "🎯 验证模式与超时配置",
+  "description": "控制验证策略、超时规则与防刷机制",
+  "fields": {
+    "verification_mode": {
+      "type": "int",
+      "default": 0,
+      "description": "验证模式：0=用户自主选择(艾特+1/2)，1=仅邮箱验证，2=仅数学题验证"
+    },
+    "email_cooldown": {
+      "type": "int",
+      "default": 60,
+      "description": "邮件发送冷却时间（秒），防止刷验证"
+    },
+    "verification_timeout": {
+      "type": "int",
+      "default": 600,
+      "description": "验证超时秒数"
+    },
+    "kick_countdown_warning_time": {
+      "type": "int",
+      "default": 120,
+      "description": "踢出前警告倒计时（秒）"
+    },
+    "kick_delay": {
+      "type": "int",
+      "default": 10,
+      "description": "踢出延迟（秒）"
+    }
+  }
+}

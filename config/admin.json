@@ -1,0 +1,16 @@
+{
+  "category": "🔐 管理与群组配置",
+  "description": "启用的群号列表、管理员设置等基础配置",
+  "fields": {
+    "enabled_groups": {
+      "type": "list",
+      "default": [],
+      "description": "启用的群号列表（留空则所有群都生效）"
+    },
+    "admin_qqs": {
+      "type": "list",
+      "default": [],
+      "description": "管理员QQ号列表"
+    }
+  }
+}
