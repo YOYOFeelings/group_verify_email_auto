@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入群验证邮件</title>
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body style="margin:0; padding:0; width:100%; min-height:100vh; background-color:#0f172a; font-family:'SF Mono','Fira Code','Consolas',monospace;">
+    <table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#0f172a;">
+        <tr>
+            <td align="center" valign="top" style="padding:40px 0;">
+                <div align="center">
+                    <div style="word-break:break-all;box-sizing:border-box;text-align:center;min-width:320px;max-width:600px;margin:auto;">
+                        <table style="width:100%;border-collapse:collapse">
+                            <tbody>
+                                <tr>
+                                    <td style="text-align:center;">
+                                        <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;padding:48px 40px;box-shadow:0 0 40px rgba(59,130,246,0.2);text-align:left;">
+                                            
+                                            <div style="text-align:center;margin-bottom:32px;">
+                                                <div style="display:inline-flex;align-items:center;gap:12px;">
+                                                    <span style="font-size:24px;">⌨️</span>
+                                                    <span style="font-size:18px;color:#64748b;font-weight:600;letter-spacing:2px;">SYSTEM VERIFICATION</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style="border-left:3px solid #3b82f6;padding-left:20px;margin-bottom:32px;">
+                                                <h1 style="font-size:24px;line-height:32px;margin:0 0 8px;color:#f8fafc;font-weight:700;">欢迎加入 {group_name}</h1>
+                                                <p style="font-size:14px;color:#64748b;line-height:20px;margin:0;">USER: <span style="color:#22c55e;">{member_name}</span></p>
+                                            </div>
+                                            
+                                            <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:28px 24px;margin-bottom:28px;">
+                                                <p style="font-size:13px;color:#64748b;line-height:18px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">[ VERIFICATION CODE ]</p>
+                                                <div style="font-size:38px;font-weight:800;letter-spacing:12px;color:#22c55e;font-family:'SF Mono','Consolas','Fira Code',monospace;line-height:1.2;text-shadow:0 0 20px rgba(34,197,94,0.4);">{code}</div>
+                                            </div>
+                                            
+                                            <div style="margin-bottom:24px;">
+                                                <p style="font-size:15px;color:#cbd5e1;line-height:24px;margin:0 0 12px;">▶️ 请在 <span style="color:#fbbf24;font-weight:700;">{timeout} 分钟</span> 内完成验证</p>
+                                                <p style="font-size:15px;color:#cbd5e1;line-height:24px;margin:0;">▶️ 在群内 @机器人 并回复验证码</p>
+                                            </div>
+                                            
+                                            <div style="border-top:1px solid #334155;padding-top:24px;">
+                                                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                                                    <span style="font-size:13px;color:#475569;">[ AUTO-GENERATED ]</span>
+                                                    <span style="font-size:13px;color:#475569;">[ DO NOT REPLY ]</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

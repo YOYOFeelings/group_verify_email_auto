@@ -144,12 +144,17 @@
     "default": "{group_name} 入群验证码",
     "description": "邮件主题"
   },
+  "email_template_choice": {
+    "type": "int",
+    "default": 1,
+    "description": "邮件模板选择：1=经典蓝色(默认)，2=简约风格，3=渐变紫色，4=卡片风格，5=科技风格，0=自定义模板"
+  },
   "email_body_html": {
     "type": "text",
-    "description": "邮件HTML模板（支持HTML语法高亮编辑）",
+    "description": "邮件HTML模板（支持HTML语法高亮编辑），仅在email_template_choice=0时使用",
     "editor_mode": true,
     "editor_language": "html",
     "default": "<h2>欢迎加入 {group_name}</h2><p>您好 {member_name}：</p><p>您的验证码为：<b style='color:blue'>{code}</b></p><p>请在 {timeout} 分钟内在群内 @我 并回复此验证码。</p>",
-    "hint": "邮件HTML模板，支持以下变量：\n{group_name} - 群名称\n{member_name} - 用户昵称\n{code} - 验证码\n{timeout} - 超时分钟数\n{bg_url} - 背景图链接\n{card_style} - 毛玻璃卡片样式\n\n可自由编辑HTML，使用变量时注意保留 {} 花括号。"
+    "hint": "邮件HTML模板，支持以下变量：\n{group_name} - 群名称\n{member_name} - 用户昵称\n{code} - 验证码\n{timeout} - 超时分钟数\n{bg_url} - 背景图链接\n{card_style} - 毛玻璃卡片样式\n\n可自由编辑HTML，使用变量时注意保留 {} 花括号。仅在选择自定义模板(0)时生效。"
   }
 }

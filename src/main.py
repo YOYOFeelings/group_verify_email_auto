@@ -48,15 +48,33 @@ class GroupVerifyEmailAuto(Star):
 
         email_domain = get_conf("email_domain", "@qq.com")
         email_subject = get_conf("email_subject", "{group_name} 入群验证码")
-        template_file = os.path.join(os.path.dirname(__file__), "..", "templates", "email_template.html")
-        if os.path.exists(template_file):
-            with open(template_file, "r", encoding="utf-8") as f:
-                email_body = f.read()
-            logger.info("邮件模板从文件加载")
-        else:
+        template_choice = int(get_conf("email_template_choice", 1))
+        
+        # 根据选择加载对应的模板
+        if template_choice == 0:
+            # 自定义模板
             email_body = get_conf("email_body_html", "...")
-            logger.warning("邮件模板文件不存在，使用内置模板")
-        logger.info(f"邮箱配置 | domain={email_domain}")
+            logger.info("使用自定义邮件模板")
+        else:
+            # 预定义模板
+            template_filename = {
+                1: "email_template.html",
+                2: "email_template_2.html",
+                3: "email_template_3.html",
+                4: "email_template_4.html",
+                5: "email_template_5.html"
+            }.get(template_choice, "email_template.html")
+            
+            template_file = os.path.join(os.path.dirname(__file__), "..", "templates", template_filename)
+            if os.path.exists(template_file):
+                with open(template_file, "r", encoding="utf-8") as f:
+                    email_body = f.read()
+                logger.info(f"邮件模板从文件加载: {template_filename}")
+            else:
+                email_body = get_conf("email_body_html", "...")
+                logger.warning(f"模板文件 {template_filename} 不存在，使用内置模板")
+        
+        logger.info(f"邮箱配置 | domain={email_domain} | template={template_choice}")
 
         verify_timeout = int(get_conf("verification_timeout", 600))
         warning_time = int(get_conf("kick_countdown_warning_time", 120))
