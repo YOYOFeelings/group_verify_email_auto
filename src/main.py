@@ -48,7 +48,7 @@ class GroupVerifyEmailAuto(Star):
 
         email_domain = get_conf("email_domain", "@qq.com")
         email_subject = get_conf("email_subject", "{group_name} 入群验证码")
-        template_file = os.path.join(os.path.dirname(__file__), "email_template.html")
+        template_file = os.path.join(os.path.dirname(__file__), "..", "templates", "email_template.html")
         if os.path.exists(template_file):
             with open(template_file, "r", encoding="utf-8") as f:
                 email_body = f.read()

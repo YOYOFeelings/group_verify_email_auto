@@ -28,7 +28,7 @@ class AdminHandler:
         self.log_file_path = log_file_path or os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "email_verify.log")
 
-        template_path = os.path.join(os.path.dirname(__file__), "log_email_template.html")
+        template_path = os.path.join(os.path.dirname(__file__), "..", "templates", "log_email_template.html")
         if os.path.exists(template_path):
             with open(template_path, "r", encoding="utf-8") as f:
                 self.log_email_template = f.read()
