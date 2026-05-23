@@ -318,71 +318,74 @@ class GroupVerifyEmailAuto(Star):
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def handle_event(self, event: AstrMessageEvent):
-        if event.get_platform_name() != "aiocqhttp":
-            return
-        if not event.message_obj or not event.message_obj.raw_message:
-            return
-        raw = event.message_obj.raw_message
-        if not isinstance(raw, dict):
-            return
-        post_type = raw.get("post_type")
-        gid = raw.get("group_id")
-        
-        if post_type == "notice":
-            notice_type = raw.get("notice_type")
-            if notice_type == "group_increase":
-                uid = str(raw.get("user_id"))
-                if uid == str(event.get_self_id()):
-                    logger.debug(f"忽略机器人自身入群事件 | group={gid}")
-                    return
-                
-                logger.info(f"收到入群事件 | group={gid} | user={uid}")
-                
-                if gid and not self._is_group_enabled(gid):
-                    logger.info(f"群隔离拦截入群事件 | group={gid} | user={uid}")
-                    return
-                
-                await self.verification.new_member(event)
-            elif notice_type == "group_decrease":
-                uid = str(raw.get("user_id"))
-                logger.info(f"收到退群事件 | group={gid} | user={uid}")
-                await self.verification.member_decrease(event)
-        elif post_type == "message":
-            if raw.get("message_type") == "group":
-                if gid and not self._is_group_enabled(gid):
-                    logger.info(f"群隔离拦截 | group={gid} 不在启用列表中")
-                    return
-                uid = str(event.get_sender_id())
-                text = event.message_str.strip() if event.message_str else ""
-                bot_id = str(event.get_self_id())
-                logger.debug(f"收到群消息 | group={gid} | user={uid} | text={text} | bot_id={bot_id}")
-                
-                is_at_me = False
-                at_command = None
-                if isinstance(raw.get("message"), list):
-                    for seg in raw.get("message"):
-                        if seg.get("type") == "at" and str(seg.get("data", {}).get("qq")) == bot_id:
-                            is_at_me = True
-                            break
-                
-                if is_at_me:
-                    logger.debug(f"检测到艾特机器人 | user={uid} | text={text}")
-                    at_command = self._extract_admin_command(text)
-                    logger.info(f"提取管理员指令 | user={uid} | cmd={at_command}")
-                
-                if self.admin_handler.is_admin(uid) and is_at_me and at_command:
-                    logger.info(f"管理员触发指令 | user={uid} | cmd={at_command}")
-                    handled = await self.admin_handler.handle_command(event, uid, at_command, raw)
-                    if handled:
-                        event.stop_event()
+        try:
+            if event.get_platform_name() != "aiocqhttp":
+                return
+            if not event.message_obj or not event.message_obj.raw_message:
+                return
+            raw = event.message_obj.raw_message
+            if not isinstance(raw, dict):
+                return
+            post_type = raw.get("post_type")
+            gid = raw.get("group_id")
+            
+            if post_type == "notice":
+                notice_type = raw.get("notice_type")
+                if notice_type == "group_increase":
+                    uid = str(raw.get("user_id"))
+                    if uid == str(event.get_self_id()):
+                        logger.debug(f"忽略机器人自身入群事件 | group={gid}")
                         return
-                
-                await self.verification.handle_message(event)
-            elif raw.get("message_type") == "private":
-                uid = str(event.get_sender_id())
-                text = event.message_str.strip() if event.message_str else ""
-                logger.debug(f"收到私信 | user={uid} | text={text}")
-                if self.admin_handler.is_admin(uid):
-                    handled = await self.admin_handler.handle_command(event, uid, text, raw)
-                    if handled:
-                        event.stop_event()
+                    
+                    logger.info(f"收到入群事件 | group={gid} | user={uid}")
+                    
+                    if gid and not self._is_group_enabled(gid):
+                        logger.info(f"群隔离拦截入群事件 | group={gid} | user={uid}")
+                        return
+                    
+                    await self.verification.new_member(event)
+                elif notice_type == "group_decrease":
+                    uid = str(raw.get("user_id"))
+                    logger.info(f"收到退群事件 | group={gid} | user={uid}")
+                    await self.verification.member_decrease(event)
+            elif post_type == "message":
+                if raw.get("message_type") == "group":
+                    if gid and not self._is_group_enabled(gid):
+                        logger.info(f"群隔离拦截 | group={gid} 不在启用列表中")
+                        return
+                    uid = str(event.get_sender_id())
+                    text = event.message_str.strip() if event.message_str else ""
+                    bot_id = str(event.get_self_id())
+                    logger.debug(f"收到群消息 | group={gid} | user={uid} | text={text} | bot_id={bot_id}")
+                    
+                    is_at_me = False
+                    at_command = None
+                    if isinstance(raw.get("message"), list):
+                        for seg in raw.get("message"):
+                            if seg.get("type") == "at" and str(seg.get("data", {}).get("qq")) == bot_id:
+                                is_at_me = True
+                                break
+                    
+                    if is_at_me:
+                        logger.debug(f"检测到艾特机器人 | user={uid} | text={text}")
+                        at_command = self._extract_admin_command(text)
+                        logger.info(f"提取管理员指令 | user={uid} | cmd={at_command}")
+                    
+                    if self.admin_handler.is_admin(uid) and is_at_me and at_command:
+                        logger.info(f"管理员触发指令 | user={uid} | cmd={at_command}")
+                        handled = await self.admin_handler.handle_command(event, uid, at_command, raw)
+                        if handled:
+                            event.stop_event()
+                            return
+                    
+                    await self.verification.handle_message(event)
+                elif raw.get("message_type") == "private":
+                    uid = str(event.get_sender_id())
+                    text = event.message_str.strip() if event.message_str else ""
+                    logger.debug(f"收到私信 | user={uid} | text={text}")
+                    if self.admin_handler.is_admin(uid):
+                        handled = await self.admin_handler.handle_command(event, uid, text, raw)
+                        if handled:
+                            event.stop_event()
+        except Exception as e:
+            logger.exception(f"事件处理异常 | error={e}")

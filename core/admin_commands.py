@@ -1,6 +1,8 @@
 import re
 import os
 import logging
+import asyncio
+import time
 from datetime import datetime
 from .email_utils import async_send_verification, async_send_log_attachment, get_next_bg_url, build_email_html_sync
 from .verification import generate_code
@@ -241,9 +243,7 @@ class AdminHandler:
             return
 
         code = generate_code()
-        import asyncio
-        task = asyncio.create_task(asyncio.sleep(0))
-        self.verification.pending[uid] = {"gid": gid, "email": None, "code": code, "task": task, "time": time.time()}
+        self.verification.pending[uid] = {"gid": gid, "email": None, "code": code, "time": time.time()}
         self.verification.pending_mode.pop(uid, None)
         self.verification.math_pending.pop(uid, None)
 
