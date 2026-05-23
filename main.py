@@ -16,12 +16,10 @@ os.makedirs(DATA_DIR, exist_ok=True)
 get_plugin_logger(log_dir=DATA_DIR)
 logger = logging.getLogger("GroupVerifyEmailAuto.main")
 
-
 def _fix_newlines(s: str) -> str:
     if not isinstance(s, str):
         return s
     return s.replace('\\n', '\n')
-
 
 @register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.7",
           "https://github.com/YOYOFeelings/group_verify_email_auto")
@@ -29,7 +27,7 @@ class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):
         super().__init__(context)
         self.context = context
-        logger.info("插件初始化开始 (v1.5 - 5种邮件模板选择)")
+        logger.info("插件初始化开始 (v1.7)")
 
         def get_conf(key, default):
             val = config.get(key, default) if config else default
@@ -37,6 +35,7 @@ class GroupVerifyEmailAuto(Star):
 
         self.enabled_groups = [str(g) for g in get_conf("enabled_groups", [])]
         self.admin_qqs = [str(q) for q in get_conf("admin_qqs", [])]
+        self.admin_command_location = get_conf("admin_command_location", "all")
         self.verification_mode = int(get_conf("verification_mode", 0))
         logger.info(f"配置加载 | enabled_groups={self.enabled_groups} | admin_qqs={self.admin_qqs} | mode={self.verification_mode}")
 
@@ -51,7 +50,7 @@ class GroupVerifyEmailAuto(Star):
         email_domain = get_conf("email_domain", "@qq.com")
         email_subject = get_conf("email_subject", "{group_name} 入群验证码")
         template_choice = int(get_conf("email_template_choice", 1))
-
+        
         # 根据选择加载对应的模板
         if template_choice == 0:
             # 自定义模板
@@ -59,23 +58,23 @@ class GroupVerifyEmailAuto(Star):
             logger.info("使用自定义邮件模板")
         else:
             # 预定义模板
-            template_path = {
-                1: "templates/email_template.html",
-                2: "templates/email_template_2.html",
-                3: "templates/email_template_3.html",
-                4: "templates/email_template_4.html",
-                5: "templates/email_template_5.html"
-            }.get(template_choice, "templates/email_template.html")
-
-            template_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), template_path)
+            template_filename = {
+                1: "email_template.html",
+                2: "email_template_2.html",
+                3: "email_template_3.html",
+                4: "email_template_4.html",
+                5: "email_template_5.html"
+            }.get(template_choice, "email_template.html")
+            
+            template_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", template_filename)
             if os.path.exists(template_file):
                 with open(template_file, "r", encoding="utf-8") as f:
                     email_body = f.read()
-                logger.info(f"邮件模板从文件加载: {template_path}")
+                logger.info(f"邮件模板从文件加载: {template_filename}")
             else:
                 email_body = get_conf("email_body_html", "...")
-                logger.warning(f"模板文件 {template_path} 不存在，使用内置模板")
-
+                logger.warning(f"模板文件 {template_filename} 不存在，使用内置模板")
+        
         logger.info(f"邮箱配置 | domain={email_domain} | template={template_choice}")
 
         verify_timeout = int(get_conf("verification_timeout", 600))
@@ -88,7 +87,7 @@ class GroupVerifyEmailAuto(Star):
         welcome_image = get_conf("welcome_image", "")
         enable_email_bg_image = get_conf("enable_email_background_image", False)
         email_bg_url = get_conf("email_background_image_url", "") if enable_email_bg_image else ""
-        logger.info(f"新特性配置 | welcome_img={enable_welcome_image} | bg_url={enable_email_bg_image}")
+        logger.info(f"图片配置 | welcome_image={enable_welcome_image} | bg_image={enable_email_bg_image}")
 
         msg_templates = {
             "trigger": get_conf("trigger_prompt", "..."),
@@ -161,6 +160,16 @@ class GroupVerifyEmailAuto(Star):
         logger.debug(f"检查群启用状态 | group={gid} | enabled={result}")
         return result
 
+    def _is_admin_command_allowed(self, msg_type):
+        """检查管理员指令是否允许在该位置使用"""
+        if self.admin_command_location == "all":
+            return True
+        if self.admin_command_location == "group" and msg_type == "group":
+            return True
+        if self.admin_command_location == "private" and msg_type == "private":
+            return True
+        return False
+
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def handle_event(self, event: AstrMessageEvent):
         if event.get_platform_name() != "aiocqhttp":
@@ -172,6 +181,7 @@ class GroupVerifyEmailAuto(Star):
             return
         post_type = raw.get("post_type")
         gid = raw.get("group_id")
+        
         if post_type == "notice":
             notice_type = raw.get("notice_type")
             if notice_type == "group_increase":
@@ -186,15 +196,26 @@ class GroupVerifyEmailAuto(Star):
                 uid = str(raw.get("user_id"))
                 logger.info(f"收到退群事件 | group={gid} | user={uid}")
                 await self.verification.member_decrease(event)
-        elif post_type == "message" and raw.get("message_type") == "group":
-            if gid and not self._is_group_enabled(gid):
-                return
-            uid = str(event.get_sender_id())
-            text = event.message_str.strip()
-            logger.debug(f"收到群消息 | group={gid} | user={uid} | text={text}")
-            if self.admin_handler.is_admin(uid):
-                handled = await self.admin_handler.handle_command(event, uid, text, raw)
-                if handled:
-                    event.stop_event()
+        elif post_type == "message":
+            # 处理群聊消息
+            if raw.get("message_type") == "group":
+                if gid and not self._is_group_enabled(gid):
                     return
-            await self.verification.handle_message(event)
+                uid = str(event.get_sender_id())
+                text = event.message_str.strip()
+                logger.debug(f"收到群消息 | group={gid} | user={uid} | text={text}")
+                if self.admin_handler.is_admin(uid) and self._is_admin_command_allowed("group"):
+                    handled = await self.admin_handler.handle_command(event, uid, text, raw)
+                    if handled:
+                        event.stop_event()
+                        return
+                await self.verification.handle_message(event)
+            # 处理私信消息
+            elif raw.get("message_type") == "private":
+                uid = str(event.get_sender_id())
+                text = event.message_str.strip()
+                logger.debug(f"收到私信 | user={uid} | text={text}")
+                if self.admin_handler.is_admin(uid) and self._is_admin_command_allowed("private"):
+                    handled = await self.admin_handler.handle_command(event, uid, text, raw)
+                    if handled:
+                        event.stop_event()
