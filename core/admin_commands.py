@@ -113,15 +113,16 @@ class AdminHandler:
         email = f"{admin_uid}{self.email_domain}"
         logger.info(f"管理员自测 | user={admin_uid} | email={email} | code={code}")
         await self._safe_send(event, admin_uid, gid, "正在发送测试邮件...")
-        success = await self._send_mail(email, "管理员", "管理员测试", code)
+        success, error_data = await self._send_mail(email, "管理员", "管理员测试", code)
         if success:
             try:
                 await self.add_pending_func(admin_uid, gid, email, code)
-                resp = f"测试邮件已发送，验证码：{code}"
+                resp = f"✅ 测试邮件已发送，验证码：{code}"
             except Exception as e:
-                resp = f"邮件已发送但启动验证失败: {e}"
+                resp = f"✅ 邮件已发送但启动验证失败: {e}"
         else:
-            resp = "测试邮件发送失败"
+            error_msg = error_data[0] if error_data else "未知错误"
+            resp = f"❌ 测试邮件发送失败: {error_msg}"
         await self._safe_send(event, admin_uid, gid, resp)
 
     async def _test_to(self, event, admin_uid, target_qq, custom_code, gid):
@@ -129,8 +130,12 @@ class AdminHandler:
         email = f"{target_qq}{self.email_domain}"
         logger.info(f"管理员向指定用户发送测试 | admin={admin_uid} | target={target_qq} | code={code}")
         await self._safe_send(event, admin_uid, gid, f"正在发送测试邮件至 {email}...")
-        success = await self._send_mail(email, f"QQ{target_qq}", "管理员指定测试", code)
-        resp = f"测试邮件已发送" if success else "发送失败"
+        success, error_data = await self._send_mail(email, f"QQ{target_qq}", "管理员指定测试", code)
+        if success:
+            resp = f"✅ 测试邮件已发送"
+        else:
+            error_msg = error_data[0] if error_data else "未知错误"
+            resp = f"❌ 发送失败: {error_msg}"
         await self._safe_send(event, admin_uid, gid, resp)
 
     async def _send_logs(self, event, admin_uid, gid):

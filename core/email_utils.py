@@ -352,29 +352,54 @@ def send_email_sync(host, port, user, pwd, encryption, from_name, to, subject, h
     msg["To"] = to
     msg["Subject"] = subject
     server = None
+    error_info = None
     try:
         server = _get_smtp(host, port, encryption)
         server.login(user, pwd)
         server.sendmail(user, [to], msg.as_string())
         logger.info(f"邮件发送成功 | to={to}")
+        return True, None
+    except smtplib.SMTPAuthenticationError as e:
+        error_msg = f"SMTP认证失败，请检查用户名和授权码是否正确"
+        logger.error(f"邮件发送失败 - 认证错误 | to={to} | error={e}")
+        return False, (error_msg, "auth")
+    except smtplib.SMTPConnectError as e:
+        error_msg = f"无法连接到SMTP服务器，请检查服务器地址和端口配置"
+        logger.error(f"邮件发送失败 - 连接错误 | to={to} | error={e}")
+        return False, (error_msg, "connect")
+    except smtplib.SMTPException as e:
+        error_msg = f"SMTP服务异常: {str(e)}"
+        logger.error(f"邮件发送失败 - SMTP错误 | to={to} | error={e}")
+        return False, (error_msg, "smtp")
+    except TimeoutError as e:
+        error_msg = f"连接超时，请检查网络连接或SMTP服务器是否可访问"
+        logger.error(f"邮件发送失败 - 超时 | to={to} | error={e}")
+        return False, (error_msg, "timeout")
     except Exception as e:
-        logger.exception(f"邮件发送失败 | to={to} | error={e}")
-        raise
+        error_msg = f"发送邮件时出现未知错误: {str(e)}"
+        logger.exception(f"邮件发送失败 - 未知错误 | to={to} | error={e}")
+        return False, (error_msg, "unknown")
     finally:
         if server:
-            server.quit()
+            try:
+                server.quit()
+            except:
+                pass
 
 
 async def async_send_verification(host, port, user, pwd, encryption, from_name, to, subject,
                                   html, bg_url="", use_glass=False):
     logger.info(f"异步发送验证邮件 | to={to} | subject={subject}")
     try:
-        await asyncio.to_thread(send_email_sync, host, port, user, pwd, encryption,
-                                from_name, to, subject, html)
-        return True
+        success, error_data = await asyncio.to_thread(send_email_sync, host, port, user, pwd, encryption,
+                                                      from_name, to, subject, html)
+        if success:
+            return True, None
+        else:
+            return False, error_data
     except Exception as e:
-        logger.error(f"异步邮件发送异常 | {e}")
-        return False
+        logger.exception(f"异步邮件发送异常 | {e}")
+        return False, (f"系统错误: {str(e)}", "system")
 
 
 async def async_send_log_attachment(host, port, user, pwd, encryption, from_name, to, subject,

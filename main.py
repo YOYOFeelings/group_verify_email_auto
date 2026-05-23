@@ -78,7 +78,7 @@ def _flatten_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.9",
+@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.9.1",
           "https://github.com/YOYOFeelings/group_verify_email_auto")
 class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):

@@ -468,11 +468,12 @@ class VerificationManager:
         email = f"{uid}{self.email_domain}"
         code = generate_code()
         
-        success = await self._send_mail(email, nickname, group_name, code)
+        success, error_data = await self._send_mail(email, nickname, group_name, code)
         if not success:
             logger.error(f"邮件发送失败 | user={uid} | email={email}")
+            error_msg = error_data[0] if error_data else "邮件发送失败，请稍后重试或联系管理员"
             await event.send(event.chain_result([
-                At(qq=int(uid)), Plain(" 邮件发送失败，请稍后重试或联系管理员")
+                At(qq=int(uid)), Plain(f" {error_msg}")
             ]))
             return
         
@@ -495,11 +496,11 @@ class VerificationManager:
                                           code=code, timeout=timeout_min)
         final_bg = await get_next_bg_url(self.email_bg_url) if self.email_bg_url else ""
         html = build_email_html_sync(self.email_body, final_bg, group_name, nickname, code, timeout_min)
-        result = await async_send_verification(
+        success, error_data = await async_send_verification(
             self.smtp_host, self.smtp_port, self.smtp_user, self.smtp_password,
             self.smtp_encryption, self.from_name, to, subject, html
         )
-        return result
+        return success, error_data
 
     async def _timeout_kick(self, uid: str, gid: int, nickname: str):
         if uid in self.admin_qqs:
