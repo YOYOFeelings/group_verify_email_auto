@@ -110,9 +110,9 @@ class GroupVerifyEmailAuto(Star):
         await self.initialize()
         yield event.plain_result("✅ 配置已重载")
     
-    @filter.event_message_type(filter.EventMessageType.NOTICE)
-    async def on_group_notice(self, event: AstrMessageEvent):
-        """处理群通知事件"""
+    @filter.event_message_type(filter.EventMessageType.ALL)
+    async def on_all_events(self, event: AstrMessageEvent):
+        """处理所有事件"""
         raw = event.message_obj.raw_message
         if not isinstance(raw, dict):
             return
