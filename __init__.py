@@ -1,1 +1,3 @@
-# 空文件，使目录成为 Python 包
+from .main import GroupVerifyEmailAuto
+
+__all__ = ['GroupVerifyEmailAuto']
