@@ -1241,6 +1241,18 @@ pre code {
     border-top: 1px solid var(--border);
 }
 
+.feature-img {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.feature-img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 164, 255, 0.15);
+}
+
 /* ===== Content Section (for usage.html) ===== */
 .content-section {
     padding: 80px 0;
@@ -1248,4 +1260,46 @@ pre code {
 
 .content-section .content-card:last-child {
     margin-bottom: 0;
+}
+
+/* ===== Contributors ===== */
+.contributors.section {
+    background: var(--bg-secondary);
+}
+
+.contributors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.contributor-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.contributor-item:hover {
+    border-color: var(--border-accent);
+    background: var(--bg-card-hover);
+    transform: translateX(4px);
+}
+
+.contributor-name {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.contributor-role {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
 }

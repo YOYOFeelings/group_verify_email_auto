@@ -26,7 +26,7 @@
     </div>
 </nav>
 
-<main>
+<div id="features-container">
     <section class="page-header section" id="page-header">
         <div class="container">
             <h1>功能介绍</h1>
@@ -45,13 +45,7 @@
                         <h3>邮箱验证</h3>
                     </div>
                     <div class="verify-card-body">
-                        <p>系统自动获取用户 QQ 号，拼接为 <code>QQ号@qq.com</code> 发送验证码邮件。用户查看邮箱获取验证码后，在群内 @机器人 回复即可完成验证。</p>
-                        <ul class="verify-features">
-                            <li>自动获取 QQ 号，无需手动输入邮箱</li>
-                            <li>支持自定义邮件模板和背景图</li>
-                            <li>验证码邮件美观大气</li>
-                            <li>支持多种邮箱 SMTP 配置</li>
-                        </ul>
+                        <p>系统自动获取用户QQ号，发送验证码到QQ邮箱，验证身份真实性</p>
                     </div>
                 </article>
                 <article class="verify-card verify-card-math">
@@ -60,18 +54,9 @@
                         <h3>数学题验证</h3>
                     </div>
                     <div class="verify-card-body">
-                        <p>系统随机生成加减法数学题，用户回答正确即可通过验证。无需配置邮箱，快速便捷。</p>
-                        <ul class="verify-features">
-                            <li>随机出题，防自动化破解</li>
-                            <li>无需邮箱配置，开箱即用</li>
-                            <li>验证速度快，用户体验好</li>
-                            <li>适合快速验证场景</li>
-                        </ul>
+                        <p>快速出题，无需邮箱配置，适合低门槛验证场景</p>
                     </div>
                 </article>
-            </div>
-            <div class="verify-mode-info">
-                <p>插件支持 <strong>3 种验证模式</strong>：模式 0 让用户自由选择验证方式、模式 1 强制邮箱验证、模式 2 强制数学题验证。管理员可在配置中灵活切换。</p>
             </div>
         </div>
     </section>
@@ -79,10 +64,10 @@
     <section class="verify-flow section" id="verify-flow">
         <div class="container">
             <h2 class="section-title">验证流程</h2>
-            <p class="section-desc">从入群到验证完成的完整链路</p>
+            <p class="section-desc">三步完成验证，简单快捷</p>
             <div class="flow-steps">
                 <div class="flow-step">
-                    <div class="flow-step-number">1</div>
+                    <div class="flow-step-number">01</div>
                     <div class="flow-step-content">
                         <h3>用户入群</h3>
                         <p>新成员加入群聊，触发验证流程</p>
@@ -90,23 +75,15 @@
                     <div class="flow-step-arrow">&darr;</div>
                 </div>
                 <div class="flow-step">
-                    <div class="flow-step-number">2</div>
+                    <div class="flow-step-number">02</div>
                     <div class="flow-step-content">
-                        <h3>模式判断</h3>
-                        <p>根据配置进入对应验证流程：邮箱验证 or 数学题验证</p>
+                        <h3>选择验证</h3>
+                        <p>自动发送验证方式选择菜单，用户选择邮箱或数学题验证</p>
                     </div>
                     <div class="flow-step-arrow">&darr;</div>
                 </div>
                 <div class="flow-step">
-                    <div class="flow-step-number">3</div>
-                    <div class="flow-step-content">
-                        <h3>发送验证</h3>
-                        <p>发送验证码邮件或随机数学题，等待用户回复</p>
-                    </div>
-                    <div class="flow-step-arrow">&darr;</div>
-                </div>
-                <div class="flow-step">
-                    <div class="flow-step-number">4</div>
+                    <div class="flow-step-number">03</div>
                     <div class="flow-step-content">
                         <h3>验证结果</h3>
                         <p>验证成功发送欢迎语，超时自动踢出并公告</p>
@@ -124,34 +101,22 @@
                 <article class="core-card">
                     <div class="core-card-icon">&#x1F4DD;</div>
                     <h3>自定义模板</h3>
-                    <p>所有消息模板均支持变量替换，可自定义入群提示、验证菜单、欢迎语等全部文案。邮件模板支持 5 种预设风格 + 自定义 HTML，满足个性化需求。</p>
-                    <div class="core-card-meta">
-                        <span data-src="自定义模板截图占位-支持变量替换和HTML编辑">图片占位</span>
-                    </div>
+                    <p>所有消息模板均支持变量替换，满足个性化需求</p>
                 </article>
                 <article class="core-card">
                     <div class="core-card-icon">&#x1F504;</div>
                     <h3>回归用户检测</h3>
-                    <p>自动识别之前验证成功的用户，重新入群时跳过验证流程。基于 SQLite 数据库记录，数据持久化不丢失。</p>
-                    <div class="core-card-meta">
-                        <span data-src="回归用户检测流程截图占位">图片占位</span>
-                    </div>
+                    <p>自动识别之前验证成功的用户，重新入群时跳过验证流程</p>
                 </article>
                 <article class="core-card">
                     <div class="core-card-icon">&#x1F4CA;</div>
                     <h3>数据库记录</h3>
-                    <p>使用 SQLite 持久化存储所有验证记录，包括用户 QQ 号、昵称、邮箱、验证方式、验证结果、时间戳等。支持数据统计和 HTML 报告导出。</p>
-                    <div class="core-card-meta">
-                        <span data-src="数据库统计报告截图占位">图片占位</span>
-                    </div>
+                    <p>使用SQLite持久化存储所有验证记录</p>
                 </article>
                 <article class="core-card">
                     <div class="core-card-icon">&#x1F310;</div>
-                    <h3>多群支持</h3>
-                    <p>可指定特定群开启验证，也可配置全局生效。每个群独立管理，互不干扰。支持按群查看统计数据和管理配置。</p>
-                    <div class="core-card-meta">
-                        <span data-src="多群管理界面截图占位">图片占位</span>
-                    </div>
+                    <h3>多群管理</h3>
+                    <p>可指定特定群开启验证，也可配置全局生效</p>
                 </article>
             </div>
         </div>
@@ -159,15 +124,14 @@
 
     <section class="cta section" id="cta">
         <div class="container">
-            <h2>准备好开始了吗？</h2>
-            <p>立即安装插件，为你的群聊加上双重安全保障</p>
+            <h2>立即体验</h2>
+            <p>在 AstrBot 管理面板搜索「群邮箱验证码」即可安装</p>
             <div class="cta-actions">
-                <a href="./install.html" class="btn btn-primary">开始安装 &rarr;</a>
-                <a href="./index.html" class="btn btn-secondary">返回首页</a>
+                <a href="./install.html" class="btn btn-primary">查看安装指南 &rarr;</a>
             </div>
         </div>
     </section>
-</main>
+</div>
 
 <footer class="footer">
     <div class="container">
@@ -189,6 +153,8 @@
     </div>
 </footer>
 
+<script src="./data/features.json" id="features-data" type="application/json"></script>
 <script src="./js/main.js"></script>
+<script src="./js/features.js"></script>
 </body>
 </html>

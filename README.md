@@ -1,6 +1,8 @@
 # 📧 QQ群邮箱验证码插件
 
 > ✨ **版本**：v1.15.0 | 👤 **作者**：感情 | 📜 **协议**：MIT
+>
+> 🌐 **官网**：https://yoyofeelings.github.io/group_verify_email_auto/
 
 ---
 
@@ -525,8 +527,20 @@ group_verify_email_auto/
 
 - 🐛 **问题反馈**：[GitHub Issues](https://github.com/YOYOFeelings/group_verify_email_auto/issues)
 - 📦 **插件市场**：AstrBot 管理面板搜索"群邮箱验证码"
+- 🌐 **官方网站**：[插件官网](https://yoyofeelings.github.io/group_verify_email_auto/)
 - 💬 **交流群组**：欢迎加入 AstrBot 官方群组讨论
 
 ---
 
-> 📌 **版本**：v1.11 | 👤 **作者**：感情 | 📜 **协议**：MIT
+## 🤝 贡献者
+
+感谢所有为本项目做出贡献的人：
+
+| 贡献者 | 说明 |
+|--------|------|
+| [@感情](https://github.com/YOYOFeelings) | 项目作者与主要开发者 |
+| [@chatGPT-AI-API](https://github.com/chatGPT-AI-API) | 技术支持与AI能力集成 |
+
+---
+
+> 📌 **版本**：v1.15.0 | 👤 **作者**：感情 | 📜 **协议**：MIT

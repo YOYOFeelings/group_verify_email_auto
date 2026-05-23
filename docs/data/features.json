@@ -1,0 +1,27 @@
+{
+  "pageHeader": { "title": "功能介绍", "desc": "全面了解 QQ群邮箱验证码插件的强大功能" },
+  "dualVerify": { "title": "双验证体系", "desc": "邮箱验证 + 数学题验证，灵活应对不同场景", "cards": [
+    {"icon": "📧", "title": "邮箱验证", "desc": "自动获取用户QQ号，发送验证码到QQ邮箱，验证身份真实性"},
+    {"icon": "🧮", "title": "数学题验证", "desc": "快速出题，无需邮箱配置，适合低门槛验证场景"}
+  ]},
+  "verifyFlow": { "title": "验证流程", "desc": "三步完成验证，简单快捷", "steps": [
+    {"num": "01", "title": "用户入群", "desc": "新成员加入群聊，触发验证流程"},
+    {"num": "02", "title": "选择验证", "desc": "自动发送验证方式选择菜单，用户选择邮箱或数学题验证"},
+    {"num": "03", "title": "验证结果", "desc": "验证成功发送欢迎语，超时自动踢出并公告"}
+  ]},
+  "coreFeatures": { "title": "核心特性", "desc": "更多强大功能，全方位守护群聊", "cards": [
+    {"icon": "📝", "title": "自定义模板", "desc": "所有消息模板均支持变量替换，满足个性化需求"},
+    {"icon": "🔄", "title": "回归用户检测", "desc": "自动识别之前验证成功的用户，重新入群时跳过验证流程"},
+    {"icon": "📊", "title": "数据库记录", "desc": "使用SQLite持久化存储所有验证记录"},
+    {"icon": "🌐", "title": "多群管理", "desc": "可指定特定群开启验证，也可配置全局生效"}
+  ]},
+  "cta": { "title": "立即体验", "desc": "在 AstrBot 管理面板搜索「群邮箱验证码」即可安装", "btnText": "查看安装指南", "btnLink": "./install.html" },
+  "contributors": {
+    "title": "贡献者",
+    "desc": "感谢以下贡献者对本项目的支持",
+    "list": [
+      {"name": "感情", "link": "https://github.com/YOYOFeelings", "role": "项目作者与主要开发者"},
+      {"name": "chatGPT-AI-API", "link": "https://github.com/chatGPT-AI-API", "role": "技术支持与AI能力集成"}
+    ]
+  }
+}
