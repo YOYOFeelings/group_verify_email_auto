@@ -210,10 +210,14 @@ class VerificationManager:
         except Exception as e:
             logger.warning(f"获取昵称失败 | user={uid} | error={e}")
         
+        logger.info(f"新成员入群事件 | group={gid} | user={uid} | nickname={nickname}")
+        
         group_info = await self._get_group_info(event, gid)
         group_name = group_info.get("name", "本群")
         member_count = group_info.get("member_count", "?")
         admin_list = group_info.get("admins", "无")
+        
+        logger.debug(f"检查回归用户 | user={uid} | group={gid} | enable_return_skip={self.enable_return_skip} | db={bool(self.db)}")
         
         # 检查是否启用回归用户跳过
         if self.enable_return_skip and self.db:
@@ -242,6 +246,8 @@ class VerificationManager:
                                                   email=history.get("email"))
                 return
         
+        logger.debug(f"创建验证记录 | user={uid} | group={gid} | mode={self.verification_mode}")
+        
         # 记录到数据库
         record_id = None
         join_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -266,6 +272,7 @@ class VerificationManager:
         logger.info(f"新成员入群验证启动 | group={gid} | user={uid} | mode={self.verification_mode}")
         
         if self.verification_mode == 2:
+            logger.debug(f"使用数学题验证模式")
             q, a = self._generate_math_problem()
             self.math_pending[uid] = {"answer": a, "gid": gid}
             timeout_min = self.verify_timeout // 60
@@ -273,7 +280,6 @@ class VerificationManager:
                                     timeout=str(timeout_min))
             segs = [At(qq=int(uid)), Plain(" " + msg)]
             
-            # 调试日志
             logger.debug(f"准备发送数学题验证消息 | user={uid} | group={gid} | msg长度: {len(msg)}")
             logger.debug(f"消息内容: {msg[:100]}...")
             
@@ -281,11 +287,13 @@ class VerificationManager:
             logger.info(f"数学题验证消息发送成功 | user={uid} | group={gid}")
             return
         elif self.verification_mode == 1:
+            logger.debug(f"使用纯邮箱验证模式")
             msg = self._format_msg(self.trigger_prompt, member_name=nickname,
                                   group_name=group_name, group_member_count=member_count,
                                   admin_list=admin_list)
             segs = [At(qq=int(uid)), Plain(" " + msg)]
         else:
+            logger.debug(f"使用模式0(用户自选)")
             if self.mode_0_menu_prompt:
                 msg = self._format_msg(self.mode_0_menu_prompt, member_name=nickname,
                                       group_name=group_name, group_member_count=member_count,
@@ -307,11 +315,9 @@ class VerificationManager:
             except Exception as e:
                 logger.error(f"欢迎图片失败: {e}")
         
-        # 调试日志
         logger.debug(f"准备发送消息 | user={uid} | group={gid} | msg长度: {len(msg)}")
         logger.debug(f"消息内容: {msg[:100]}...")
         
-        # 确保消息不为空
         if not msg or msg.isspace():
             logger.warning("消息为空，使用默认消息")
             msg = f"{At(qq=int(uid))} 欢迎加入本群！请 @我 选择验证方式。"
@@ -338,6 +344,7 @@ class VerificationManager:
         if uid not in self.pending:
             logger.debug(f"用户不在待验证队列 | user={uid}")
             return
+        
         raw = event.message_obj.raw_message
         text = event.message_str.strip() if event.message_str else ""
         bot_id = str(event.get_self_id())
@@ -367,10 +374,14 @@ class VerificationManager:
         except Exception:
             pass
         
+        logger.debug(f"验证状态检查 | user={uid} | mode={self.verification_mode} | pending_mode={self.pending_mode.get(uid)} | email={info.get('email')} | math_pending={uid in self.math_pending}")
+        
         skip_selection = self.verification_mode in (1, 2) or uid in self.pending_mode
         if not skip_selection and info["email"] is None and uid not in self.math_pending:
+            logger.debug(f"用户需要选择验证方式 | user={uid} | text={text}")
             if text.strip() == "1":
                 self.pending_mode[uid] = 1
+                logger.info(f"用户选择邮箱验证 | user={uid}")
                 await event.send(event.chain_result([
                     At(qq=int(uid)), Plain(" 已选择邮箱验证，正在为您发送验证码到邮箱...")
                 ]))
@@ -378,6 +389,7 @@ class VerificationManager:
                 return
             elif text.strip() == "2":
                 self.pending_mode[uid] = 2
+                logger.info(f"用户选择数学题验证 | user={uid}")
                 q, a = self._generate_math_problem()
                 self.math_pending[uid] = {"answer": a, "gid": gid}
                 await event.send(event.chain_result([
@@ -385,12 +397,14 @@ class VerificationManager:
                 ]))
                 return
             else:
+                logger.warning(f"用户输入无效选项 | user={uid} | text={text}")
                 await event.send(event.chain_result([
                     At(qq=int(uid)), Plain(" 请回复 1(邮箱验证) 或 2(数学题验证)")
                 ]))
                 return
         
         if uid in self.math_pending:
+            logger.debug(f"处理数学题验证 | user={uid} | text={text}")
             mp = self.math_pending[uid]
             try:
                 user_answer = int(text.strip())
@@ -398,6 +412,7 @@ class VerificationManager:
                     del self.math_pending[uid]
                     if info.get("task"):
                         info["task"].cancel()
+                    logger.info(f"数学题验证成功 | user={uid}")
                     welcome = self._format_msg(self.welcome_msg, member_name=nickname,
                                               group_name=group_name, group_member_count=member_count,
                                               admin_list=admin_list)
@@ -409,20 +424,22 @@ class VerificationManager:
                         self.db.update_verification_result(uid, str(gid), join_time, 1)
                     
                     del self.pending[uid]
-                    logger.info(f"数学题验证成功 | user={uid}")
                 else:
+                    logger.warning(f"数学题答案错误 | user={uid} | expected={mp['answer']} | got={user_answer}")
                     q, a = self._generate_math_problem()
                     self.math_pending[uid] = {"answer": a, "gid": gid}
                     await event.send(event.chain_result([
                         At(qq=int(uid)), Plain(" 答案错误，请重新回答：\n" + str(q))
                     ]))
             except ValueError:
+                logger.warning(f"用户输入非数字 | user={uid} | text={text}")
                 await event.send(event.chain_result([
                     At(qq=int(uid)), Plain(" 请输入数字答案")
                 ]))
             return
         
         if info["email"] is None:
+            logger.debug(f"自动触发邮箱验证 | user={uid}")
             await self._send_email_verification(event, uid, nickname, group_name)
             return
         
@@ -431,7 +448,7 @@ class VerificationManager:
             logger.debug(f"消息中未找到6位验证码 | user={uid} | text={text}")
             return
         input_code = m.group(1)
-        logger.info(f"收到验证码 | user={uid} | input=******")  # 安全加固：验证码脱敏 - 2026-05-23
+        logger.info(f"收到验证码 | user={uid} | input=******")
         
         if input_code == info["code"]:
             logger.info(f"验证成功 | user={uid}")
@@ -450,13 +467,15 @@ class VerificationManager:
             
             del self.pending[uid]
         else:
-            logger.warning(f"验证码错误 | user={uid} | input=****** | expected=******")  # 安全加固：验证码脱敏 - 2026-05-23
+            logger.warning(f"验证码错误 | user={uid} | input=****** | expected=******")
             if not self._can_send(uid):
+                logger.warning(f"验证码错误但冷却中 | user={uid}")
                 await event.send(event.chain_result([
                     At(qq=int(uid)), Plain(f" 操作太频繁，请 {self.cooldown} 秒后再试")
                 ]))
                 return
             
+            logger.info(f"重新发送验证码 | user={uid}")
             new_code = generate_code()
             info["code"] = new_code
             await self._send_mail(info["email"], nickname, group_name, new_code)
@@ -467,7 +486,10 @@ class VerificationManager:
 
     async def _send_email_verification(self, event, uid, nickname, group_name):
         """自动发送邮箱验证"""
+        logger.info(f"邮箱验证开始 | user={uid} | nickname={nickname} | group={group_name}")
+        
         if not self._can_send(uid):
+            logger.warning(f"邮箱验证冷却中 | user={uid}")
             await event.send(event.chain_result([
                 At(qq=int(uid)), Plain(f" 操作太频繁，请 {self.cooldown} 秒后再试")
             ]))
@@ -476,14 +498,18 @@ class VerificationManager:
         email = f"{uid}{self.email_domain}"
         code = generate_code()
         
+        logger.info(f"准备发送验证码邮件 | user={uid} | email={email} | code=******")
+        
         success, error_data = await self._send_mail(email, nickname, group_name, code)
         if not success:
-            logger.error(f"邮件发送失败 | user={uid} | email={email}")
+            logger.error(f"邮件发送失败 | user={uid} | email={email} | error={error_data}")
             error_msg = error_data[0] if error_data else "邮件发送失败，请稍后重试或联系管理员"
             await event.send(event.chain_result([
                 At(qq=int(uid)), Plain(f" {error_msg}")
             ]))
             return
+        
+        logger.info(f"邮件发送成功，更新 pending 记录 | user={uid}")
         
         if uid in self.pending:
             self.pending[uid]["email"] = email
@@ -492,6 +518,8 @@ class VerificationManager:
             if not self.pending[uid].get("task"):
                 task = asyncio.create_task(self._timeout_kick(uid, self.pending[uid]["gid"], nickname))
                 self.pending[uid]["task"] = task
+        else:
+            logger.error(f"用户不在待验证队列中！| user={uid} | 这不应该发生")
         
         sent = self._format_msg(self.sent_prompt, email=email, member_name=nickname)
         segs = [At(qq=int(uid)), Plain(" " + sent)]
@@ -500,14 +528,29 @@ class VerificationManager:
 
     async def _send_mail(self, to: str, nickname: str, group_name: str, code: str):
         timeout_min = self.verify_timeout // 60
+        logger.info(f"构建邮件内容 | to={to} | group={group_name} | nickname={nickname} | timeout={timeout_min}")
+        
         subject = self.email_subject.format(group_name=group_name, member_name=nickname,
                                           code=code, timeout=timeout_min)
+        logger.debug(f"邮件主题: {subject}")
+        
         final_bg = await get_next_bg_url(self.email_bg_url) if self.email_bg_url else ""
+        logger.debug(f"背景图URL: {final_bg or '无'}")
+        
         html = build_email_html_sync(self.email_body, final_bg, group_name, nickname, code, timeout_min)
+        logger.debug(f"邮件HTML长度: {len(html)} 字符")
+        
+        logger.info(f"开始发送邮件 | smtp={self.smtp_host}:{self.smtp_port} | from={self.smtp_user} | to={to}")
         success, error_data = await async_send_verification(
             self.smtp_host, self.smtp_port, self.smtp_user, self.smtp_password,
             self.smtp_encryption, self.from_name, to, subject, html
         )
+        
+        if success:
+            logger.info(f"邮件发送成功 | to={to}")
+        else:
+            logger.error(f"邮件发送失败 | to={to} | error={error_data}")
+        
         return success, error_data
 
     async def _timeout_kick(self, uid: str, gid: int, nickname: str):
