@@ -326,6 +326,7 @@ class VerificationManager:
     async def handle_message(self, event):
         uid = str(event.get_sender_id())
         if uid not in self.pending:
+            logger.debug(f"用户不在待验证队列 | user={uid}")
             return
         raw = event.message_obj.raw_message
         text = event.message_str.strip() if event.message_str else ""
@@ -337,11 +338,12 @@ class VerificationManager:
                     at_me = True
                     break
         if not at_me:
+            logger.debug(f"用户消息未艾特机器人 | user={uid}")
             return
         
         info = self.pending[uid]
         gid = info["gid"]
-        logger.debug(f"收到待验证消息 | user={uid} | text={text}")
+        logger.info(f"收到待验证用户消息 | user={uid} | group={gid} | text={text}")
         
         group_info = await self._get_group_info(event, gid)
         group_name = group_info.get("name", "本群")
@@ -362,7 +364,6 @@ class VerificationManager:
                 await event.send(event.chain_result([
                     At(qq=int(uid)), Plain(" 已选择邮箱验证，正在为您发送验证码到邮箱...")
                 ]))
-                # 直接触发邮箱验证流程
                 await self._send_email_verification(event, uid, nickname, group_name)
                 return
             elif text.strip() == "2":
@@ -393,7 +394,6 @@ class VerificationManager:
                     segs = [At(qq=int(uid)), Plain(" " + welcome)]
                     await event.send(event.chain_result(segs))
                     
-                    # 更新数据库
                     if self.db:
                         join_time = info.get("join_time", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                         self.db.update_verification_result(uid, str(gid), join_time, 1)
@@ -413,16 +413,15 @@ class VerificationManager:
             return
         
         if info["email"] is None:
-            # 自动发送邮箱验证
             await self._send_email_verification(event, uid, nickname, group_name)
             return
         
-        # 验证码比对
         m = re.search(r'\b(\d{6})\b', text)
         if not m:
+            logger.debug(f"消息中未找到6位验证码 | user={uid} | text={text}")
             return
         input_code = m.group(1)
-        logger.debug(f"收到验证码 | user={uid} | input={input_code}")
+        logger.info(f"收到验证码 | user={uid} | input={input_code}")
         
         if input_code == info["code"]:
             logger.info(f"验证成功 | user={uid}")
@@ -435,14 +434,13 @@ class VerificationManager:
             segs = [At(qq=int(uid)), Plain(" " + welcome)]
             await event.send(event.chain_result(segs))
             
-            # 更新数据库
             if self.db:
                 join_time = info.get("join_time", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 self.db.update_verification_result(uid, str(gid), join_time, 1, email=info["email"])
             
             del self.pending[uid]
         else:
-            logger.warning(f"验证码错误 | user={uid} | input={input_code}")
+            logger.warning(f"验证码错误 | user={uid} | input={input_code} | expected={info['code']}")
             if not self._can_send(uid):
                 await event.send(event.chain_result([
                     At(qq=int(uid)), Plain(f" 操作太频繁，请 {self.cooldown} 秒后再试")
