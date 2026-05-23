@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import json
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -110,6 +111,12 @@ class DatabaseManager:
         
         conn.commit()
         conn.close()
+        # 安全加固：数据库文件权限加固，仅所有者可读写 - 2026-05-23
+        if os.name == 'posix':
+            try:
+                os.chmod(self.db_path, 0o600)
+            except Exception:
+                pass
         logger.info("数据库表结构初始化完成")
     
     def add_verification_record(self, user_qq: str, group_id: str, 
@@ -260,7 +267,7 @@ class DatabaseManager:
         cursor = conn.cursor()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        cursor.execute('SELECT * FROM user_stats WHERE user_qq = ?', (user_qq,))
+        cursor.execute('SELECT 1 FROM user_stats WHERE user_qq = ?', (user_qq,))
         exists = cursor.fetchone()
         
         if exists:
@@ -575,7 +582,6 @@ class DatabaseManager:
             config_value = str(config_value)
             config_type = 'int'
         elif isinstance(config_value, list):
-            import json
             config_value = json.dumps(config_value, ensure_ascii=False)
             config_type = 'list'
         else:
@@ -617,7 +623,6 @@ class DatabaseManager:
             except:
                 return default_value
         elif config_type == 'list':
-            import json
             try:
                 return json.loads(config_value)
             except:
@@ -650,7 +655,6 @@ class DatabaseManager:
                 except:
                     result[key] = value
             elif config_type == 'list':
-                import json
                 try:
                     result[key] = json.loads(value)
                 except:

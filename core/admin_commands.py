@@ -113,7 +113,7 @@ class AdminHandler:
     async def _test_self(self, event, admin_uid, custom_code, gid):
         code = custom_code if custom_code else generate_code()
         email = f"{admin_uid}{self.email_domain}"
-        logger.info(f"管理员自测 | user={admin_uid} | email={email} | code={code}")
+        logger.info(f"管理员自测 | user={admin_uid} | email={email} | code=******")  # 安全加固：验证码脱敏 - 2026-05-23
         await self._safe_send(event, admin_uid, gid, "正在发送测试邮件...")
         success, error_data = await self._send_mail(email, "管理员", "管理员测试", code)
         if success:
@@ -130,7 +130,7 @@ class AdminHandler:
     async def _test_to(self, event, admin_uid, target_qq, custom_code, gid):
         code = custom_code if custom_code else generate_code()
         email = f"{target_qq}{self.email_domain}"
-        logger.info(f"管理员向指定用户发送测试 | admin={admin_uid} | target={target_qq} | code={code}")
+        logger.info(f"管理员向指定用户发送测试 | admin={admin_uid} | target={target_qq} | code=******")  # 安全加固：验证码脱敏 - 2026-05-23
         await self._safe_send(event, admin_uid, gid, f"正在发送测试邮件至 {email}...")
         success, error_data = await self._send_mail(email, f"QQ{target_qq}", "管理员指定测试", code)
         if success:

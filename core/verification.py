@@ -3,17 +3,21 @@ import asyncio
 import re
 import time
 import random
+import secrets  # 安全加固：用于生成密码学安全的随机验证码 - 2026-05-23
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List
 from .email_utils import async_send_verification, build_email_html_sync, get_next_bg_url
 from astrbot.api.message_components import At, Plain, Image
 
+VERIFY_CODE_LENGTH = 6  # 安全加固：验证码位数常量 - 2026-05-23
+
 logger = logging.getLogger("GroupVerifyEmailAuto.verification")
 
 
 def generate_code():
-    return str(random.randint(100000, 999999))
+    # 安全加固：使用 secrets 模块生成密码学安全的随机验证码 - 2026-05-23
+    return str(secrets.randbelow(900000) + 100000)
 
 
 def _safe_format(s: str, **kwargs) -> str:
@@ -190,8 +194,9 @@ class VerificationManager:
             if old and not old.done():
                 old.cancel()
         is_admin = uid in self.admin_qqs
+        join_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         task = asyncio.create_task(asyncio.sleep(0)) if is_admin else asyncio.create_task(self._timeout_kick(uid, gid, nickname))
-        self.pending[uid] = {"gid": gid, "email": email, "code": code, "task": task, "time": time.time()}
+        self.pending[uid] = {"gid": gid, "email": email, "code": code, "task": task, "time": time.time(), "join_time": join_time}
         logger.info(f"待验证队列添加成功 | user={uid}")
 
     async def new_member(self, event):
@@ -238,20 +243,25 @@ class VerificationManager:
                 return
         
         # 记录到数据库
+        record_id = None
+        join_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if self.db:
             record_id = self.db.add_verification_record(uid, str(gid), self.verification_mode,
                                                         nickname, group_name)
-            self.pending[uid] = {"gid": gid, "record_id": record_id, "email": None,
-                               "code": None, "task": None, "time": time.time(),
-                               "join_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-        else:
-            if uid in self.pending:
-                old = self.pending[uid].get("task")
-                if old and not old.done():
-                    old.cancel()
-            task = asyncio.create_task(self._timeout_kick(uid, gid, nickname))
-            self.pending[uid] = {"gid": gid, "email": None, "code": None,
-                               "task": task, "time": time.time()}
+        
+        # 统一创建超时踢出任务（所有模式都需要）
+        if uid in self.pending:
+            old = self.pending[uid].get("task")
+            if old and not old.done():
+                old.cancel()
+        task = asyncio.create_task(self._timeout_kick(uid, gid, nickname))
+        
+        pending_entry = {"gid": gid, "email": None, "code": None,
+                        "task": task, "time": time.time(),
+                        "join_time": join_time}
+        if record_id:
+            pending_entry["record_id"] = record_id
+        self.pending[uid] = pending_entry
         
         logger.info(f"新成员入群验证启动 | group={gid} | user={uid} | mode={self.verification_mode}")
         
@@ -421,7 +431,7 @@ class VerificationManager:
             logger.debug(f"消息中未找到6位验证码 | user={uid} | text={text}")
             return
         input_code = m.group(1)
-        logger.info(f"收到验证码 | user={uid} | input={input_code}")
+        logger.info(f"收到验证码 | user={uid} | input=******")  # 安全加固：验证码脱敏 - 2026-05-23
         
         if input_code == info["code"]:
             logger.info(f"验证成功 | user={uid}")
@@ -440,7 +450,7 @@ class VerificationManager:
             
             del self.pending[uid]
         else:
-            logger.warning(f"验证码错误 | user={uid} | input={input_code} | expected={info['code']}")
+            logger.warning(f"验证码错误 | user={uid} | input=****** | expected=******")  # 安全加固：验证码脱敏 - 2026-05-23
             if not self._can_send(uid):
                 await event.send(event.chain_result([
                     At(qq=int(uid)), Plain(f" 操作太频繁，请 {self.cooldown} 秒后再试")
@@ -486,7 +496,7 @@ class VerificationManager:
         sent = self._format_msg(self.sent_prompt, email=email, member_name=nickname)
         segs = [At(qq=int(uid)), Plain(" " + sent)]
         await event.send(event.chain_result(segs))
-        logger.info(f"验证码发送成功 | user={uid} | email={email} | code={code}")
+        logger.info(f"验证码发送成功 | user={uid} | email={email} | code=******")  # 安全加固：验证码脱敏 - 2026-05-23
 
     async def _send_mail(self, to: str, nickname: str, group_name: str, code: str):
         timeout_min = self.verify_timeout // 60

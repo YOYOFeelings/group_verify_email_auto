@@ -7,6 +7,7 @@ import collections
 import urllib.request
 import urllib.error
 import logging
+import html
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -17,6 +18,8 @@ from io import BytesIO
 
 logger = logging.getLogger("GroupVerifyEmailAuto.email_utils")
 SMTP_TIMEOUT = 5
+CODE_IMAGE_WIDTH = 400  # 安全加固：提取验证码图片宽度常量 - 2026-05-23
+CODE_IMAGE_HEIGHT = 160  # 安全加固：提取验证码图片高度常量 - 2026-05-23
 
 # ==================== 验证码图片生成 ====================
 
@@ -84,7 +87,7 @@ def generate_code_image(code: str, uid: str = "") -> str:
         return ""
 
     # 图片尺寸
-    width, height = 400, 160
+    width, height = CODE_IMAGE_WIDTH, CODE_IMAGE_HEIGHT  # 安全加固：使用常量代替硬编码 - 2026-05-23
     padding = 20
 
     # 创建画布 - 渐变色背景
@@ -297,7 +300,7 @@ async def get_next_bg_url(api_url: str) -> str:
 def build_email_html_sync(template: str, final_bg_url: str, group_name: str,
                           member_name: str, code: str, timeout_min: int) -> str:
     """同步构造验证邮件HTML，final_bg_url 为最终背景图链接（可空）"""
-    logger.debug(f"构造邮件HTML | final_bg={final_bg_url} | group={group_name} | code={code}")
+    logger.debug(f"构造邮件HTML | final_bg={final_bg_url} | group={group_name} | code=******")  # 安全加固：日志验证码脱敏 - 2026-05-23
     bg_valid = bool(final_bg_url and final_bg_url.strip() and re.match(r'^https?://', final_bg_url.strip()))
     if not bg_valid and final_bg_url and final_bg_url.strip():
         logger.error(f"背景图链接格式无效 | url={final_bg_url}")
@@ -321,9 +324,13 @@ def build_email_html_sync(template: str, final_bg_url: str, group_name: str,
         html = html.replace("background-image:url('{bg_url}');", '')
 
     html = html.replace('{card_style}', card_style)
+
+    # 安全加固：XSS防护 - 对用户输入进行HTML转义 - 2026-05-23
+    safe_member_name = html.escape(member_name) if member_name else member_name
+    safe_group_name = html.escape(group_name) if group_name else group_name
     html = html.format(
-        group_name=group_name,
-        member_name=member_name,
+        group_name=safe_group_name,
+        member_name=safe_member_name,
         code=code,
         timeout=timeout_min,
         bg_url=final_bg_url if bg_valid else ''
@@ -352,7 +359,6 @@ def send_email_sync(host, port, user, pwd, encryption, from_name, to, subject, h
     msg["To"] = to
     msg["Subject"] = subject
     server = None
-    error_info = None
     try:
         server = _get_smtp(host, port, encryption)
         server.login(user, pwd)
@@ -410,12 +416,16 @@ async def async_send_log_attachment(host, port, user, pwd, encryption, from_name
     msg["To"] = to
     msg["Subject"] = subject
     msg.attach(MIMEText(body, "html", "utf-8"))
-    with open(file_path, "rb") as f:
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(f.read())
-        encoders.encode_base64(part)
-        part.add_header("Content-Disposition", "attachment", filename=("utf-8", "", fname))
-        msg.attach(part)
+    if file_path:
+        try:
+            with open(file_path, "rb") as f:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(f.read())
+                encoders.encode_base64(part)
+                part.add_header("Content-Disposition", "attachment", filename=("utf-8", "", fname))
+                msg.attach(part)
+        except FileNotFoundError:
+            logger.warning(f"附件文件不存在，仅发送正文 | file={file_path}")
     server = None
     try:
         server = _get_smtp(host, port, encryption)
