@@ -31,8 +31,10 @@
       },
       "smtp_port": {
         "type": "int",
-        "default": 465,
-        "description": "SMTP端口"
+        "description": "SMTP端口",
+        "options": [465, 587, 25, 994],
+        "labels": ["465 (SSL/TLS 推荐)", "587 (TLS 推荐)", "25 (非加密)", "994 (SSL 备用)"],
+        "default": 465
       },
       "smtp_user": {
         "type": "string",
@@ -46,8 +48,10 @@
       },
       "smtp_encryption": {
         "type": "string",
-        "default": "ssl",
-        "description": "加密方式：ssl, tls, none"
+        "description": "加密方式（支持下拉选择）",
+        "options": ["none", "ssl", "tls"],
+        "labels": ["不加密", "SSL加密", "TLS加密"],
+        "default": "ssl"
       },
       "from_name": {
         "type": "string",

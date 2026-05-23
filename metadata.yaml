@@ -1,13 +1,13 @@
 name: group_verify_email_auto
 display_name: QQ群邮箱验证码插件
 author: 感情
-version: "1.12.1"
+version: "1.12.2"
 short_desc: 基于邮箱验证码的入群验证插件，支持数学题验证
 description: >
   基于邮箱验证码 + 数学题双模式入群验证插件。
   自动使用QQ号构造邮箱发送验证码，支持回归用户检测、自定义模板、数据库记录等多种功能。
   支持群内@机器人或私信回复验证码。
-  v1.12.1 修复：管理员指令被群隔离拦截问题，README流程描述更新。
+  v1.12.2 配置优化：SMTP加密方式和端口改为下拉选择框，常见邮箱配置参考表更新。
 repo_url: https://github.com/YOYOFeelings/group_verify_email_auto
 support_platforms:
  - aiocqhttp

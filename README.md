@@ -1,6 +1,6 @@
 # 📧 QQ群邮箱验证码插件
 
-> ✨ **版本**：v1.12.1 | 👤 **作者**：感情 | 📜 **协议**：MIT
+> ✨ **版本**：v1.12.2 | 👤 **作者**：感情 | 📜 **协议**：MIT
 
 ---
 
@@ -137,22 +137,27 @@
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `smtp_host` | string | `smtp.qq.com` | SMTP服务器地址 |
-| `smtp_port` | int | `465` | SMTP端口 |
+| `smtp_port` | int | `465` | SMTP端口（支持下拉选择：465 SSL推荐 / 587 TLS推荐 / 25 非加密 / 994 SSL备用） |
 | `smtp_user` | string | `your_email@qq.com` | 发信邮箱账号 |
 | `smtp_password` | string | `""` | **邮箱授权码**（不是登录密码！） |
-| `smtp_encryption` | string | `ssl` | 加密方式：`ssl` / `tls` / `none` |
+| `smtp_encryption` | string | `ssl` | 加密方式（支持下拉选择：SSL加密 / TLS加密 / 不加密） |
 | `from_name` | string | `Q群验证助手` | 发件人显示名称 |
 | `email_domain` | string | `@qq.com` | 用户邮箱后缀（自动用QQ号拼接） |
 | `email_template_choice` | int | `1` | 邮件模板选择：`1`=经典蓝色，`2`=简约风格，`3`=渐变紫色，`4`=卡片风格，`5`=科技风格，`0`=自定义模板 |
 
 <details>
-<summary><b>🌐 其他邮箱SMTP配置参考</b></summary>
+<summary><b>🌐 常见邮箱SMTP配置参考</b></summary>
 
-| 邮箱 | SMTP主机 | 端口 | 加密 | 密码说明 |
-|------|----------|------|------|----------|
-| QQ邮箱 | smtp.qq.com | 465/587 | ssl/tls | 授权码 |
-| 163邮箱 | smtp.163.com | 465/994 | ssl | 授权码 |
-| Gmail | smtp.gmail.com | 587/465 | tls/ssl | 应用密码 |
+| 邮箱 | SMTP主机 | 推荐端口 | 推荐加密 | 密码说明 |
+|------|----------|----------|----------|----------|
+| 📧 QQ邮箱 | smtp.qq.com | 465 | SSL | 需开启SMTP服务，使用**授权码** |
+| 📧 163邮箱 | smtp.163.com | 465 | SSL | 需开启IMAP/SMTP，使用**授权码** |
+| 📧 Gmail | smtp.gmail.com | 587 | TLS | 需开启两步验证，使用**应用密码** |
+| 📧 Outlook | smtp.office365.com | 587 | TLS | 使用邮箱密码或应用密码 |
+| 📧 126邮箱 | smtp.126.com | 465 | SSL | 需开启SMTP服务，使用**授权码** |
+| 📧 新浪邮箱 | smtp.sina.com | 465 | SSL | 需开启SMTP服务，使用**授权码** |
+
+**🔑 授权码说明**：几乎所有国内邮箱都要求使用**授权码**而非登录密码作为SMTP密码。请在邮箱设置中开启SMTP服务后获取授权码。
 
 </details>
 
