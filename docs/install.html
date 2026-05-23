@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安装指南 - QQ群邮箱验证码插件</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>QQ群邮箱验证码插件</h1>
+            <nav>
+                <ul>
+                    <li><a href="./index.html">首页</a></li>
+                    <li><a href="./install.html" class="active">安装指南</a></li>
+                    <li><a href="./usage.html">使用示例</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <div class="container">
+                <h2>安装指南</h2>
+
+                <article>
+                    <h3>方式一：AstrBot 市场安装</h3>
+                    <ol>
+                        <li>打开 AstrBot 管理面板</li>
+                        <li>进入<strong>插件市场</strong></li>
+                        <li>搜索 <strong>"群邮箱验证码"</strong></li>
+                        <li>点击安装即可</li>
+                    </ol>
+                </article>
+
+                <article>
+                    <h3>方式二：手动安装</h3>
+                    <ol>
+                        <li>进入 AstrBot 插件目录并克隆仓库：</li>
+                    </ol>
+                    <pre><code>cd AstrBot/plugins/
+git clone https://github.com/YOYOFeelings/group_verify_email_auto.git</code></pre>
+                    <ol start="2">
+                        <li>重启 AstrBot</li>
+                        <li>在管理面板中启用插件</li>
+                    </ol>
+                </article>
+
+                <article>
+                    <h3>SMTP 配置说明</h3>
+                    <p>使用邮件验证功能前，需要先配置 SMTP 邮箱服务。以下是常见邮箱的 SMTP 参数：</p>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>邮箱</th>
+                                    <th>SMTP主机</th>
+                                    <th>端口</th>
+                                    <th>加密</th>
+                                    <th>密码</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>QQ邮箱</td>
+                                    <td><code>smtp.qq.com</code></td>
+                                    <td>465</td>
+                                    <td>SSL</td>
+                                    <td>授权码</td>
+                                </tr>
+                                <tr>
+                                    <td>163邮箱</td>
+                                    <td><code>smtp.163.com</code></td>
+                                    <td>465</td>
+                                    <td>SSL</td>
+                                    <td>授权码</td>
+                                </tr>
+                                <tr>
+                                    <td>Gmail</td>
+                                    <td><code>smtp.gmail.com</code></td>
+                                    <td>587</td>
+                                    <td>TLS</td>
+                                    <td>应用密码</td>
+                                </tr>
+                                <tr>
+                                    <td>Outlook</td>
+                                    <td><code>smtp.office365.com</code></td>
+                                    <td>587</td>
+                                    <td>TLS</td>
+                                    <td>应用密码</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p>国内邮箱请使用<strong>授权码</strong>而非登录密码作为 SMTP 密码，需在邮箱设置中开启 SMTP 服务后获取。</p>
+                </article>
+
+                <article>
+                    <h3>管理员设置</h3>
+                    <p>安装完成后，在 AstrBot 管理面板的插件配置中设置管理员 QQ 号：</p>
+                    <pre><code>{
+  "admin_qqs": ["你的QQ号"]
+}</code></pre>
+                    <p>配置 <code>admin_qqs</code> 后，该 QQ 号即可使用管理员指令管理插件。</p>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 QQ群邮箱验证码插件</p>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

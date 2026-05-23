@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>常见问题 - QQ群邮箱验证码插件</title>
+  <meta name="description" content="QQ群邮箱验证码插件常见问题解答">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><span>QQ群</span>邮箱验证码插件</h1>
+      <nav>
+        <a href="./index.html">首页</a>
+        <a href="./faq.html">常见问题</a>
+        <a href="./changelog.html">更新日志</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-title">
+      <div class="container">
+        <h2>常见问题</h2>
+        <p>使用插件过程中遇到的常见问题及解决方案</p>
+      </div>
+    </section>
+
+    <section class="faq-list">
+      <div class="container">
+        <details>
+          <summary>Q: 邮件发送失败怎么办？</summary>
+          <div class="answer">
+            检查 SMTP 配置：确认使用了正确的授权码而非QQ密码，确认 smtp.qq.com 可访问，检查端口 465 是否被防火墙拦截。
+          </div>
+        </details>
+
+        <details>
+          <summary>Q: 验证码收不到？</summary>
+          <div class="answer">
+            检查垃圾邮件箱，确认QQ邮箱开启了SMTP服务，检查授权码是否过期。
+          </div>
+        </details>
+
+        <details>
+          <summary>Q: 群隔离怎么配置？</summary>
+          <div class="answer">
+            <code>enabled_groups</code> 留空则全局生效，填写群号列表则仅指定群生效。
+          </div>
+        </details>
+
+        <details>
+          <summary>Q: 数据库文件在哪？</summary>
+          <div class="answer">
+            在 <code>data/</code> 目录下的 <code>group_verify.db</code>，包含QQ号/邮箱/验证记录等。
+          </div>
+        </details>
+
+        <details>
+          <summary>Q: 如何更新插件？</summary>
+          <div class="answer">
+            打开 AstrBot 面板 → 插件管理 → 检查更新，或手动 <code>git pull</code>。
+          </div>
+        </details>
+
+        <details>
+          <summary>Q: 支持哪些平台？</summary>
+          <div class="answer">
+            支持 aiocqhttp 和 qq_official 平台。
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 QQ群邮箱验证码插件</p>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>
