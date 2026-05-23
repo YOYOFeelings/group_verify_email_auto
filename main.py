@@ -53,7 +53,7 @@ def _flatten_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.8.1",
+@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.8.2",
           "https://github.com/YOYOFeelings/group_verify_email_auto")
 class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):
@@ -63,20 +63,28 @@ class GroupVerifyEmailAuto(Star):
 
         # 扁平化配置
         flat_config = _flatten_config(config)
-        
+
+        # 初始化数据库
+        db_path = os.path.join(DATA_DIR, "verification.db")
+        self.db = DatabaseManager(db_path)
+        logger.info("数据库初始化完成")
+
+        # 获取数据库中的配置
+        db_config = self.db.get_all_config()
+        logger.info(f"从数据库获取配置 | count={len(db_config)}")
+
+        # 合并配置：优先使用数据库中的配置，如果没有则使用配置文件
+        merged_config = flat_config.copy()
+        merged_config.update(db_config)
+
         def get_conf(key, default=None):
-            val = flat_config.get(key, default)
+            val = merged_config.get(key, default)
             return _fix_newlines(val) if isinstance(val, str) else val
 
         self.enabled_groups = [str(g) for g in get_conf("enabled_groups", [])]
         self.admin_qqs = [str(q) for q in get_conf("admin_qqs", [])]
         self.verification_mode = int(get_conf("verification_mode", 0))
         logger.info(f"配置加载 | enabled_groups={self.enabled_groups} | admin_qqs={self.admin_qqs} | mode={self.verification_mode}")
-
-        # 初始化数据库
-        db_path = os.path.join(DATA_DIR, "verification.db")
-        self.db = DatabaseManager(db_path)
-        logger.info("数据库初始化完成")
 
         smtp_host = get_conf("smtp_host", "smtp.qq.com")
         smtp_port = int(get_conf("smtp_port", 465))
@@ -196,6 +204,45 @@ class GroupVerifyEmailAuto(Star):
 
         asyncio.create_task(self._startup_check(smtp_host, smtp_port, smtp_user,
                                                 smtp_password, smtp_encryption))
+        
+        # 保存所有配置到数据库
+        config_to_save = {
+            "enabled_groups": self.enabled_groups,
+            "admin_qqs": self.admin_qqs,
+            "verification_mode": self.verification_mode,
+            "smtp_host": smtp_host,
+            "smtp_port": smtp_port,
+            "smtp_user": smtp_user,
+            "smtp_password": smtp_password,
+            "smtp_encryption": smtp_encryption,
+            "from_name": from_name,
+            "email_domain": email_domain,
+            "email_subject": email_subject,
+            "email_template_choice": template_choice,
+            "email_body_html": email_body,
+            "verification_timeout": verify_timeout,
+            "kick_countdown_warning_time": warning_time,
+            "kick_delay": kick_delay,
+            "email_cooldown": cooldown,
+            "enable_welcome_image": enable_welcome_image,
+            "welcome_image": welcome_image,
+            "enable_email_background_image": enable_email_bg_image,
+            "email_background_image_url": email_bg_url,
+            "enable_return_user_skip": enable_return_skip,
+            "trigger_prompt": msg_templates["trigger"],
+            "mode_0_menu_prompt": msg_templates["mode_0_menu"],
+            "email_sent_prompt": msg_templates["sent"],
+            "wrong_code_prompt": msg_templates["wrong"],
+            "welcome_message": msg_templates["welcome"],
+            "countdown_warning_prompt": msg_templates["warning"],
+            "failure_message": msg_templates["failure"],
+            "kick_message": msg_templates["kick"],
+            "return_user_message": msg_templates["return_user"]
+        }
+        
+        self.db.save_all_config(config_to_save)
+        logger.info("所有配置已保存到数据库")
+        
         logger.info("插件初始化完成")
 
     async def _init_bg_pool(self, api_url):

@@ -77,6 +77,17 @@ class DatabaseManager:
             )
         ''')
         
+        # 插件通用配置表
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS plugin_config (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                config_key TEXT UNIQUE NOT NULL,
+                config_value TEXT,
+                config_type TEXT DEFAULT 'string',
+                update_time TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
         # 用户统计表
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_stats (
@@ -550,3 +561,110 @@ class DatabaseManager:
 </html>
 '''
         return html
+    
+    def save_config(self, config_key: str, config_value: Any, config_type: str = 'string'):
+        """保存单个配置项"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        # 转换值为字符串
+        if isinstance(config_value, bool):
+            config_value = str(1 if config_value else 0)
+            config_type = 'bool'
+        elif isinstance(config_value, int):
+            config_value = str(config_value)
+            config_type = 'int'
+        elif isinstance(config_value, list):
+            import json
+            config_value = json.dumps(config_value, ensure_ascii=False)
+            config_type = 'list'
+        else:
+            config_value = str(config_value)
+        
+        cursor.execute('''
+            INSERT INTO plugin_config (config_key, config_value, config_type, update_time)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(config_key) DO UPDATE SET
+                config_value = excluded.config_value,
+                config_type = excluded.config_type,
+                update_time = excluded.update_time
+        ''', (config_key, config_value, config_type, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        
+        conn.commit()
+        conn.close()
+        logger.info(f"保存配置 | key={config_key} | type={config_type}")
+    
+    def get_config(self, config_key: str, default_value: Any = None) -> Any:
+        """获取单个配置项"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT config_value, config_type FROM plugin_config WHERE config_key = ?', (config_key,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return default_value
+        
+        config_value, config_type = row
+        
+        # 根据类型转换
+        if config_type == 'bool':
+            return config_value == '1'
+        elif config_type == 'int':
+            try:
+                return int(config_value)
+            except:
+                return default_value
+        elif config_type == 'list':
+            import json
+            try:
+                return json.loads(config_value)
+            except:
+                return default_value
+        
+        return config_value
+    
+    def save_all_config(self, config_dict: Dict[str, Any]):
+        """批量保存所有配置"""
+        for key, value in config_dict.items():
+            self.save_config(key, value)
+        logger.info(f"批量保存配置完成 | count={len(config_dict)}")
+    
+    def get_all_config(self) -> Dict[str, Any]:
+        """获取所有配置项"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT config_key, config_value, config_type FROM plugin_config')
+        rows = cursor.fetchall()
+        conn.close()
+        
+        result = {}
+        for key, value, config_type in rows:
+            if config_type == 'bool':
+                result[key] = value == '1'
+            elif config_type == 'int':
+                try:
+                    result[key] = int(value)
+                except:
+                    result[key] = value
+            elif config_type == 'list':
+                import json
+                try:
+                    result[key] = json.loads(value)
+                except:
+                    result[key] = []
+            else:
+                result[key] = value
+        
+        logger.info(f"获取所有配置完成 | count={len(result)}")
+        return result
+    
+    def get_config_version(self) -> Optional[str]:
+        """获取配置版本（如果有）"""
+        return self.get_config('config_version')
+    
+    def update_config_version(self, version: str):
+        """更新配置版本"""
+        self.save_config('config_version', version, 'string')
