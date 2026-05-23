@@ -1,7 +1,7 @@
 name: group_verify_email_auto
 display_name: QQ群邮箱验证码插件
 author: 感情
-version: "1.15.0"
+version: "1.16.0"
 short_desc: 基于邮箱验证码+数学题双模式的AstrBot入群验证插件
 description: >
   QQ群邮箱验证码插件，支持邮箱验证码+数学题双模式入群验证。
