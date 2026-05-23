@@ -5,29 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>常见问题 - QQ群邮箱验证码插件</title>
   <meta name="description" content="QQ群邮箱验证码插件常见问题解答">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-  <header>
-    <div class="container">
-      <h1><span>QQ群</span>邮箱验证码插件</h1>
-      <nav>
-        <a href="./index.html">首页</a>
-        <a href="./faq.html">常见问题</a>
-        <a href="./changelog.html">更新日志</a>
-      </nav>
+  <nav class="navbar" role="navigation" aria-label="主导航">
+    <div class="nav-container">
+        <a href="./index.html" class="nav-logo">QQ群邮箱验证码插件</a>
+        <button class="nav-toggle" aria-label="切换导航菜单" type="button">
+            <span></span><span></span><span></span>
+        </button>
+        <ul class="nav-links">
+            <li><a href="./index.html">首页</a></li>
+            <li><a href="./features.html">功能介绍</a></li>
+            <li><a href="./install.html">安装指南</a></li>
+            <li><a href="./usage.html">使用示例</a></li>
+            <li><a href="./faq.html" class="active">常见问题</a></li>
+            <li><a href="./changelog.html">更新日志</a></li>
+        </ul>
     </div>
-  </header>
+</nav>
 
   <main>
-    <section class="page-title">
+    <section class="page-header section">
       <div class="container">
         <h2>常见问题</h2>
         <p>使用插件过程中遇到的常见问题及解决方案</p>
       </div>
     </section>
 
-    <section class="faq-list">
+    <section class="faq-list section">
       <div class="container">
         <details>
           <summary>Q: 邮件发送失败怎么办？</summary>
@@ -74,12 +80,26 @@
     </section>
   </main>
 
-  <footer>
+  <footer class="footer">
     <div class="container">
-      <p>&copy; 2026 QQ群邮箱验证码插件</p>
+        <div class="footer-content">
+            <div class="footer-info">
+                <p>QQ群邮箱验证码插件</p>
+                <p>作者：<a href="https://github.com/YOYOFeelings" target="_blank" rel="noopener">感情</a></p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/YOYOFeelings/group_verify_email_auto" target="_blank" rel="noopener" class="footer-github">
+                    <span class="github-icon">&#x1F4F7;</span> GitHub
+                </a>
+                <a href="./changelog.html">更新日志</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024-2026 感情. MIT License.</p>
+        </div>
     </div>
-  </footer>
+</footer>
 
-  <script src="/js/main.js"></script>
+  <script src="./js/main.js"></script>
 </body>
 </html>

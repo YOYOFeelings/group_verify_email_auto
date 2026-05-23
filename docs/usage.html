@@ -3,111 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QQ群邮箱验证码插件使用示例和管理员指令说明">
     <title>使用示例 - QQ群邮箱验证码插件</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-    <header>
+
+<nav class="navbar" role="navigation" aria-label="主导航">
+    <div class="nav-container">
+        <a href="./index.html" class="nav-logo">QQ群邮箱验证码插件</a>
+        <button class="nav-toggle" aria-label="切换导航菜单" type="button">
+            <span></span><span></span><span></span>
+        </button>
+        <ul class="nav-links">
+            <li><a href="./index.html">首页</a></li>
+            <li><a href="./features.html">功能介绍</a></li>
+            <li><a href="./install.html">安装指南</a></li>
+            <li><a href="./usage.html" class="active">使用示例</a></li>
+            <li><a href="./faq.html">常见问题</a></li>
+            <li><a href="./changelog.html">更新日志</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main>
+    <section class="page-header section" id="page-header">
         <div class="container">
-            <h1>QQ群邮箱验证码插件</h1>
-            <nav>
-                <ul>
-                    <li><a href="./index.html">首页</a></li>
-                    <li><a href="./install.html">安装指南</a></li>
-                    <li><a href="./usage.html" class="active">使用示例</a></li>
-                </ul>
-            </nav>
+            <h1>使用示例</h1>
+            <p class="page-header-desc">管理员指令说明与用户验证流程详解</p>
         </div>
-    </header>
+    </section>
 
-    <main>
-        <section>
-            <div class="container">
-                <h2>使用示例</h2>
+    <section class="content-section section">
+        <div class="container">
+            <article class="content-card">
+                <h2>管理员指令表</h2>
+                <p>以下指令可在群聊中 <strong>@机器人</strong> 或通过 <strong>私信</strong> 使用：</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>指令</th>
+                                <th>说明</th>
+                                <th>使用方式</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>@机器人 插件状态</code></td>
+                                <td>查看插件运行状态</td>
+                                <td>群聊/私信</td>
+                            </tr>
+                            <tr>
+                                <td><code>@机器人 测试新人进群邮箱测试</code></td>
+                                <td>测试邮箱验证流程</td>
+                                <td>群聊</td>
+                            </tr>
+                            <tr>
+                                <td><code>@机器人 查看统计数据</code></td>
+                                <td>查看验证统计</td>
+                                <td>群聊/私信</td>
+                            </tr>
+                            <tr>
+                                <td><code>@机器人 新人进群验证 QQ号 邮箱</code></td>
+                                <td>手动添加验证</td>
+                                <td>群聊/私信</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
 
-                <article>
-                    <h3>管理员指令表</h3>
-                    <p>以下指令可在群聊中 <strong>@机器人</strong> 或通过 <strong>私信</strong> 使用：</p>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>指令</th>
-                                    <th>说明</th>
-                                    <th>使用方式</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><code>@机器人 插件状态</code></td>
-                                    <td>查看插件运行状态</td>
-                                    <td>群聊/私信</td>
-                                </tr>
-                                <tr>
-                                    <td><code>@机器人 测试新人进群邮箱测试</code></td>
-                                    <td>测试邮箱验证流程</td>
-                                    <td>群聊</td>
-                                </tr>
-                                <tr>
-                                    <td><code>@机器人 查看统计数据</code></td>
-                                    <td>查看验证统计</td>
-                                    <td>群聊/私信</td>
-                                </tr>
-                                <tr>
-                                    <td><code>@机器人 新人进群验证 QQ号 邮箱</code></td>
-                                    <td>手动添加验证</td>
-                                    <td>群聊/私信</td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <article class="content-card">
+                <h2>用户验证流程</h2>
+                <ol>
+                    <li>
+                        <strong>入群触发</strong>：新成员加入群聊后，机器人自动发送验证引导消息
+                    </li>
+                    <li>
+                        <strong>选择验证方式</strong>：根据配置的模式，用户可选择邮箱验证或数学题验证
+                    </li>
+                    <li>
+                        <strong>邮箱验证</strong>：系统自动获取用户 QQ 号，发送验证码到 QQ 邮箱
+                    </li>
+                    <li>
+                        <strong>提交验证码</strong>：用户在群内 <strong>@机器人</strong> 回复验证码，或通过私信发送
+                    </li>
+                    <li>
+                        <strong>验证完成</strong>：验证成功自动放行并发送欢迎语，超时未验证将被移出群聊
+                    </li>
+                </ol>
+            </article>
+
+            <article class="content-card">
+                <h2>界面预览</h2>
+                <div class="screenshot-gallery">
+                    <div class="screenshot-placeholder">
+                        <span>截图区域 - 用户可替换</span>
                     </div>
-                </article>
-
-                <article>
-                    <h3>用户验证流程</h3>
-                    <ol>
-                        <li>
-                            <strong>入群触发</strong>：新成员加入群聊后，机器人自动发送验证引导消息
-                        </li>
-                        <li>
-                            <strong>选择验证方式</strong>：根据配置的模式，用户可选择邮箱验证或数学题验证
-                        </li>
-                        <li>
-                            <strong>邮箱验证</strong>：系统自动获取用户 QQ 号，发送验证码到 QQ 邮箱
-                        </li>
-                        <li>
-                            <strong>提交验证码</strong>：用户在群内 <strong>@机器人</strong> 回复验证码，或通过私信发送
-                        </li>
-                        <li>
-                            <strong>验证完成</strong>：验证成功自动放行并发送欢迎语，超时未验证将被移出群聊
-                        </li>
-                    </ol>
-                </article>
-
-                <article>
-                    <h3>界面预览</h3>
-                    <div class="screenshot-gallery">
-                        <div class="screenshot-placeholder">
-                            <span>截图区域 - 用户可替换</span>
-                        </div>
-                        <div class="screenshot-placeholder">
-                            <span>截图区域 - 用户可替换</span>
-                        </div>
-                        <div class="screenshot-placeholder">
-                            <span>截图区域 - 用户可替换</span>
-                        </div>
+                    <div class="screenshot-placeholder">
+                        <span>截图区域 - 用户可替换</span>
                     </div>
-                </article>
+                    <div class="screenshot-placeholder">
+                        <span>截图区域 - 用户可替换</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-info">
+                <p>QQ群邮箱验证码插件</p>
+                <p>作者：<a href="https://github.com/YOYOFeelings" target="_blank" rel="noopener">感情</a></p>
             </div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 QQ群邮箱验证码插件</p>
+            <div class="footer-links">
+                <a href="https://github.com/YOYOFeelings/group_verify_email_auto" target="_blank" rel="noopener" class="footer-github">
+                    <span class="github-icon">&#x1F4F7;</span> GitHub
+                </a>
+                <a href="./changelog.html">更新日志</a>
+            </div>
         </div>
-    </footer>
+        <div class="footer-bottom">
+            <p>&copy; 2024-2026 感情. MIT License.</p>
+        </div>
+    </div>
+</footer>
 
-    <script src="/js/main.js"></script>
+<script src="./js/main.js"></script>
 </body>
 </html>
