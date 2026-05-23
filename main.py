@@ -27,33 +27,58 @@ def _fix_newlines(s: str) -> str:
 def _flatten_config(config: Dict[str, Any]) -> Dict[str, Any]:
     """将分组配置扁平化为一级配置"""
     if not config:
+        logger.debug("传入的配置为空，返回空字典")
         return {}
+    
+    logger.debug(f"开始扁平化配置 | 原始配置: {config}")
     result = {}
-    for key, value in config.items():
-        if isinstance(value, dict):
-            if "items" in value:
-                # 分组配置：{ "分组名": { "type": "object", "items": { ... } } }
-                for sub_key, sub_value in value.get("items", {}).items():
-                    if isinstance(sub_value, dict):
-                        # 从 default 中获取值
-                        result[sub_key] = sub_value.get("default")
+    
+    def process_dict(d: Dict[str, Any], prefix: str = ""):
+        """递归处理配置字典"""
+        for key, value in d.items():
+            logger.debug(f"处理键: {prefix}{key} | 类型: {type(value)} | 值: {value}")
+            if isinstance(value, dict):
+                # 检查是否是配置项类型
+                if "type" in value:
+                    value_type = value["type"]
+                    if value_type == "object" and "items" in value:
+                        # 这是分组配置，继续处理 items
+                        logger.debug(f"发现 object 分组: {prefix}{key}，继续处理 items")
+                        process_dict(value["items"], prefix)
+                    elif "default" in value:
+                        # 这是单个配置项，从 default 获取值
+                        default_val = value["default"]
+                        result[key] = default_val
+                        logger.debug(f"添加配置项: {key} = {default_val} (类型: {type(default_val)})")
                     else:
-                        result[sub_key] = sub_value
-            elif "default" in value:
-                # 直接有 default 的配置
-                result[key] = value["default"]
+                        # 没有 default 的配置项，直接保存
+                        result[key] = value
+                        logger.debug(f"添加配置项(无 default): {key} = {value}")
+                elif "default" in value:
+                    # 直接有 default 的配置
+                    default_val = value["default"]
+                    result[key] = default_val
+                    logger.debug(f"添加配置项(直接 default): {key} = {default_val} (类型: {type(default_val)})")
+                elif "items" in value:
+                    # 直接有 items 的配置（没有 type）
+                    logger.debug(f"发现 items 分组: {prefix}{key}，继续处理")
+                    process_dict(value["items"], prefix)
+                else:
+                    # 普通的配置项，直接添加
+                    result[key] = value
+                    logger.debug(f"添加普通配置: {key} = {value}")
             else:
-                # 普通的配置项
+                # 直接添加值
                 result[key] = value
-        else:
-            # 直接添加值
-            result[key] = value
+                logger.debug(f"添加直接值: {key} = {value} (类型: {type(value)})")
+    
+    process_dict(config)
     logger.info(f"扁平化配置完成 | 配置项数量: {len(result)}")
-    logger.debug(f"扁平化配置内容: {result}")
+    logger.debug(f"扁平化配置结果: {result}")
     return result
 
 
-@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.8.2",
+@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.9",
           "https://github.com/YOYOFeelings/group_verify_email_auto")
 class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):
@@ -63,6 +88,7 @@ class GroupVerifyEmailAuto(Star):
 
         # 扁平化配置
         flat_config = _flatten_config(config)
+        logger.info(f"从面板读取配置 | count={len(flat_config)}")
 
         # 初始化数据库
         db_path = os.path.join(DATA_DIR, "verification.db")
@@ -73,9 +99,10 @@ class GroupVerifyEmailAuto(Star):
         db_config = self.db.get_all_config()
         logger.info(f"从数据库获取配置 | count={len(db_config)}")
 
-        # 合并配置：优先使用数据库中的配置，如果没有则使用配置文件
-        merged_config = flat_config.copy()
-        merged_config.update(db_config)
+        # 合并配置：优先使用面板配置，如果有则覆盖数据库配置
+        # 注意：这样确保用户在面板的修改能立即生效
+        merged_config = db_config.copy()
+        merged_config.update(flat_config)
 
         def get_conf(key, default=None):
             val = merged_config.get(key, default)

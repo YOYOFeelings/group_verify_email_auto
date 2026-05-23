@@ -19,22 +19,32 @@ def generate_code():
 def _safe_format(s: str, **kwargs) -> str:
     """安全格式化字符串"""
     if not s:
-        return s
-    # 先检查是否为非字符串
+        logger.warning("收到空字符串，返回默认消息")
+        return "请查看消息"
+    
     if not isinstance(s, str):
         s = str(s)
+        
     try:
-        return s.format(**kwargs)
-    except KeyError:
-        # 使用正则替换单个变量
+        result = s.format(**kwargs)
+        if not result or result.isspace():
+            logger.warning("格式化后结果为空，返回原始字符串")
+            return s
+        return result
+    except KeyError as e:
+        logger.warning(f"变量缺失：{e}，使用正则替换")
         def _repl(m):
             key = m.group(1)
-            return str(kwargs.get(key, m.group(0)))
-        return re.sub(r'\{(\w+)\}', _repl, s)
+            value = kwargs.get(key, m.group(0))
+            return str(value)
+        result = re.sub(r'\{(\w+)\}', _repl, s)
+        if not result or result.isspace():
+            return s
+        return result
     except Exception as e:
-        # 其他异常时返回原始字符串
         logger.error(f"格式化字符串失败 | 原始值: {s} | 错误: {e}")
-        # 返回一个安全的默认值
+        if not s or s.isspace():
+            return "请查看消息"
         return s
 
 
