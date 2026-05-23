@@ -45,14 +45,29 @@ def _flatten_config(config: Dict[str, Any]) -> Dict[str, Any]:
                     if value_type == "object" and "items" in value:
                         # 这是分组配置，继续处理 items
                         logger.debug(f"发现 object 分组: {prefix}{key}，继续处理 items")
-                        process_dict(value["items"], prefix)
-                    elif "default" in value:
+                        if isinstance(value["items"], dict):
+                            process_dict(value["items"], prefix)
+                        continue
+                    elif value_type == "list":
+                        # 列表类型配置项 - 修复：先检查 items 是否为数组
+                        if "items" in value and isinstance(value["items"], list):
+                            # items 是数组（如枚举选项），保存整个配置结构
+                            result[key] = value
+                            logger.debug(f"添加列表类型配置(数组 items): {key}")
+                            continue
+                        elif "items" in value and isinstance(value["items"], dict):
+                            # items 是对象（如 schema），递归处理
+                            process_dict(value["items"], prefix)
+                            continue
+                    # 其他类型或有 default 的情况 - 继续执行下面的 default 处理
+                    
+                    if "default" in value:
                         # 这是单个配置项，从 default 获取值
                         default_val = value["default"]
                         result[key] = default_val
                         logger.debug(f"添加配置项: {key} = {default_val} (类型: {type(default_val)})")
                     else:
-                        # 没有 default 的配置项，直接保存
+                        # 没有 default 的配置项，保存原始值
                         result[key] = value
                         logger.debug(f"添加配置项(无 default): {key} = {value}")
                 elif "default" in value:
@@ -63,7 +78,8 @@ def _flatten_config(config: Dict[str, Any]) -> Dict[str, Any]:
                 elif "items" in value:
                     # 直接有 items 的配置（没有 type）
                     logger.debug(f"发现 items 分组: {prefix}{key}，继续处理")
-                    process_dict(value["items"], prefix)
+                    if isinstance(value["items"], dict):
+                        process_dict(value["items"], prefix)
                 else:
                     # 普通的配置项，直接添加
                     result[key] = value
