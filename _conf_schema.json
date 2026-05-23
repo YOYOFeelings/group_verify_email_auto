@@ -1,98 +1,160 @@
 {
-  "基础配置": {
-    "items": {
-      "enabled_groups": {
-        "type": "list",
-        "default": [],
-        "description": "启用验证的群号列表（留空全局生效）"
-      },
-      "admin_qqs": {
-        "type": "list",
-        "default": [],
-        "description": "管理员QQ号列表"
-      },
-      "trigger_type": {
-        "type": "string",
-        "default": "all",
-        "description": "触发地点：all=全部, private=私聊, group=群聊"
-      }
-    }
+  "enabled_groups": {
+    "type": "list",
+    "default": [],
+    "description": "启用的群号列表（留空全局生效）"
   },
-  "邮件配置": {
-    "items": {
-      "smtp_host": {
-        "type": "string",
-        "default": "smtp.qq.com",
-        "description": "SMTP服务器地址"
-      },
-      "smtp_port": {
-        "type": "int",
-        "default": 465,
-        "description": "SMTP端口"
-      },
-      "smtp_user": {
-        "type": "string",
-        "default": "",
-        "description": "发信邮箱账号"
-      },
-      "smtp_password": {
-        "type": "string",
-        "default": "",
-        "description": "邮箱授权码（不是QQ密码！）"
-      },
-      "smtp_encryption": {
-        "type": "string",
-        "default": "ssl",
-        "description": "加密方式：ssl, tls, none"
-      },
-      "from_name": {
-        "type": "string",
-        "default": "Q群验证助手",
-        "description": "发件人显示名称"
-      },
-      "email_domain": {
-        "type": "string",
-        "default": "@qq.com",
-        "description": "用户邮箱后缀"
-      }
-    }
+  "admin_qqs": {
+    "type": "list",
+    "default": [],
+    "description": "管理员QQ号列表"
   },
-  "验证配置": {
-    "items": {
-      "verification_mode": {
-        "type": "int",
-        "default": 0,
-        "description": "验证模式：0=用户自选，1=仅邮箱，2=仅数学题"
-      },
-      "email_cooldown": {
-        "type": "int",
-        "default": 60,
-        "description": "发送冷却时间（秒）"
-      },
-      "verification_timeout": {
-        "type": "int",
-        "default": 600,
-        "description": "验证超时秒数"
-      },
-      "kick_delay": {
-        "type": "int",
-        "default": 10,
-        "description": "踢出延迟（秒）"
-      }
-    }
+  "smtp_host": {
+    "type": "string",
+    "default": "smtp.qq.com",
+    "description": "SMTP服务器地址"
   },
-  "显示配置": {
-    "items": {
-      "enable_code_image": {
-        "type": "bool",
-        "default": true,
-        "description": "是否生成验证码图片"
-      },
-      "email_template_choice": {
-        "type": "int",
-        "default": 1,
-        "description": "邮件模板：1-5预置模板，0=自定义"
-      }
-    }
+  "smtp_port": {
+    "type": "int",
+    "default": 465,
+    "description": "SMTP端口"
+  },
+  "smtp_user": {
+    "type": "string",
+    "default": "your_email@qq.com",
+    "description": "发信邮箱账号"
+  },
+  "smtp_password": {
+    "type": "string",
+    "default": "",
+    "description": "邮箱授权码（不是QQ密码！）"
+  },
+  "smtp_encryption": {
+    "type": "string",
+    "default": "ssl",
+    "description": "加密方式：ssl, tls, none"
+  },
+  "from_name": {
+    "type": "string",
+    "default": "Q群验证助手",
+    "description": "发件人显示名称"
+  },
+  "email_domain": {
+    "type": "string",
+    "default": "@qq.com",
+    "description": "用户邮箱后缀（自动用QQ号拼接）"
+  },
+  "verification_mode": {
+    "type": "int",
+    "default": 0,
+    "description": "验证模式：0=用户自主选择(艾特+1/2)，1=仅邮箱验证，2=仅数学题验证"
+  },
+  "email_cooldown": {
+    "type": "int",
+    "default": 60,
+    "description": "发送冷却时间（秒），防止刷验证"
+  },
+  "verification_timeout": {
+    "type": "int",
+    "default": 600,
+    "description": "验证超时秒数"
+  },
+  "kick_countdown_warning_time": {
+    "type": "int",
+    "default": 120,
+    "description": "踢出前警告倒计时（秒）"
+  },
+  "kick_delay": {
+    "type": "int",
+    "default": 10,
+    "description": "踢出延迟（秒）"
+  },
+  "enable_code_image": {
+    "type": "bool",
+    "default": true,
+    "description": "是否在群聊中以图片形式发送验证码"
+  },
+  "enable_reply_message": {
+    "type": "bool",
+    "default": true,
+    "description": "是否启用引用消息样式回复"
+  },
+  "enable_welcome_image": {
+    "type": "bool",
+    "default": false,
+    "description": "是否在入群欢迎消息中附带图片"
+  },
+  "welcome_image": {
+    "type": "string",
+    "default": "",
+    "description": "欢迎图片路径（本地绝对路径或http/https链接）"
+  },
+  "enable_email_background_image": {
+    "type": "bool",
+    "default": false,
+    "description": "是否在验证邮件中添加背景图片"
+  },
+  "email_background_image_url": {
+    "type": "string",
+    "default": "https://t.alcy.cc/moe",
+    "description": "邮件背景图片URL（二次元图片API）"
+  },
+  "trigger_prompt": {
+    "type": "string",
+    "default": "{at_user} 欢迎加入本群！\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复任意消息以接收验证码到您的 QQ 邮箱。",
+    "description": "入群提示"
+  },
+  "mode_0_menu_prompt": {
+    "type": "string",
+    "default": "{at_user} 欢迎加入本群！🎉\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复数字选择验证方式：\n1 - 邮箱验证\n2 - 数学题验证",
+    "description": "模式0用户自选菜单提示"
+  },
+  "email_sent_prompt": {
+    "type": "string",
+    "default": "{at_user} 验证码已发送至 {email}\n请查看邮件并在群内 @我 回复数字验证码。",
+    "description": "验证码已发送提示"
+  },
+  "wrong_code_prompt": {
+    "type": "string",
+    "default": "{at_user} 验证码错误，新的验证码已发送至 {email}\n请重新查看并回复。",
+    "description": "验证码错误提示"
+  },
+  "welcome_message": {
+    "type": "string",
+    "default": "{at_user} 验证成功，欢迎你的加入！🎉\n本群当前共 {group_member_count} 位群友\n管理员：\n{admin_list}",
+    "description": "验证成功欢迎语"
+  },
+  "countdown_warning_prompt": {
+    "type": "string",
+    "default": "{at_user} 验证即将超时，请尽快输入收到的验证码！",
+    "description": "超时警告"
+  },
+  "failure_message": {
+    "type": "string",
+    "default": "{at_user} 验证超时，你将在 {countdown} 秒后被请出本群。",
+    "description": "超时最后通牒"
+  },
+  "kick_message": {
+    "type": "string",
+    "default": "{at_user} 因未在规定时间内完成验证，已被请出本群。",
+    "description": "踢出公告"
+  },
+  "email_subject": {
+    "type": "string",
+    "default": "{group_name} 入群验证码",
+    "description": "邮件主题"
+  },
+  "email_template_choice": {
+    "type": "int",
+    "default": 1,
+    "description": "邮件模板选择：1=经典蓝色(默认)，2=简约风格，3=渐变紫色，4=卡片风格，5=科技风格，0=自定义模板"
+  },
+  "email_body_html": {
+    "type": "text",
+    "description": "邮件HTML模板（支持HTML语法高亮编辑），仅在email_template_choice=0时使用",
+    "editor_mode": true,
+    "editor_language": "html",
+    "default": "<h2>欢迎加入 {group_name}</h2><p>您好 {member_name}：</p><p>您的验证码为：<b style='color:blue'>{code}</b></p><p>请在 {timeout} 分钟内在群内 @我 并回复此验证码。</p>",
+    "hint": "邮件HTML模板，支持以下变量：\n{group_name} - 群名称\n{member_name} - 用户昵称\n{code} - 验证码\n{timeout} - 超时分钟数\n{bg_url} - 背景图链接\n{card_style} - 毛玻璃卡片样式\n\n可自由编辑HTML，使用变量时注意保留 {} 花括号。仅在选择自定义模板(0)时生效。"
   }
 }
