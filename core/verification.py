@@ -230,13 +230,17 @@ class VerificationManager:
                                       admin_list=admin_list)
                 segs = [At(qq=int(uid)), Plain(" " + msg)]
                 if self.enable_welcome_image and self.welcome_image:
+                    logger.info(f"尝试添加欢迎图片 | path={self.welcome_image}")
                     try:
                         if self.welcome_image.startswith(("http://", "https://")):
+                            logger.debug(f"使用网络图片URL")
                             segs.append(Image.fromURL(self.welcome_image))
                         else:
+                            logger.debug(f"使用本地文件 | exists={os.path.exists(self.welcome_image)}")
                             segs.append(Image.fromFileSystem(self.welcome_image))
+                        logger.info(f"欢迎图片添加成功")
                     except Exception as e:
-                        logger.error(f"欢迎图片失败: {e}")
+                        logger.error(f"欢迎图片失败: {e}", exc_info=True)
                 await event.send(event.chain_result(segs))
                 
                 # 记录到数据库
@@ -307,13 +311,17 @@ class VerificationManager:
             segs = [At(qq=int(uid)), Plain(" " + msg)]
         
         if self.enable_welcome_image and self.welcome_image:
+            logger.info(f"尝试添加欢迎图片 | path={self.welcome_image}")
             try:
                 if self.welcome_image.startswith(("http://", "https://")):
+                    logger.debug(f"使用网络图片URL")
                     segs.append(Image.fromURL(self.welcome_image))
                 else:
+                    logger.debug(f"使用本地文件 | exists={os.path.exists(self.welcome_image)}")
                     segs.append(Image.fromFileSystem(self.welcome_image))
+                logger.info(f"欢迎图片添加成功")
             except Exception as e:
-                logger.error(f"欢迎图片失败: {e}")
+                logger.error(f"欢迎图片失败: {e}", exc_info=True)
         
         logger.debug(f"准备发送消息 | user={uid} | group={gid} | msg长度: {len(msg)}")
         logger.debug(f"消息内容: {msg[:100]}...")
