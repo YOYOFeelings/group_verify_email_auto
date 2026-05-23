@@ -1,90 +1,98 @@
 {
   "基础配置": {
-    "enabled_groups": {
-      "type": "list",
-      "default": [],
-      "description": "启用验证的群号列表（留空全局生效）"
-    },
-    "admin_qqs": {
-      "type": "list",
-      "default": [],
-      "description": "管理员QQ号列表"
-    },
-    "trigger_type": {
-      "type": "string",
-      "default": "all",
-      "description": "触发地点：all=全部, private=私聊, group=群聊"
+    "items": {
+      "enabled_groups": {
+        "type": "list",
+        "default": [],
+        "description": "启用验证的群号列表（留空全局生效）"
+      },
+      "admin_qqs": {
+        "type": "list",
+        "default": [],
+        "description": "管理员QQ号列表"
+      },
+      "trigger_type": {
+        "type": "string",
+        "default": "all",
+        "description": "触发地点：all=全部, private=私聊, group=群聊"
+      }
     }
   },
   "邮件配置": {
-    "smtp_host": {
-      "type": "string",
-      "default": "smtp.qq.com",
-      "description": "SMTP服务器地址"
-    },
-    "smtp_port": {
-      "type": "int",
-      "default": 465,
-      "description": "SMTP端口"
-    },
-    "smtp_user": {
-      "type": "string",
-      "default": "",
-      "description": "发信邮箱账号"
-    },
-    "smtp_password": {
-      "type": "string",
-      "default": "",
-      "description": "邮箱授权码（不是QQ密码！）"
-    },
-    "smtp_encryption": {
-      "type": "string",
-      "default": "ssl",
-      "description": "加密方式：ssl, tls, none"
-    },
-    "from_name": {
-      "type": "string",
-      "default": "Q群验证助手",
-      "description": "发件人显示名称"
-    },
-    "email_domain": {
-      "type": "string",
-      "default": "@qq.com",
-      "description": "用户邮箱后缀"
+    "items": {
+      "smtp_host": {
+        "type": "string",
+        "default": "smtp.qq.com",
+        "description": "SMTP服务器地址"
+      },
+      "smtp_port": {
+        "type": "int",
+        "default": 465,
+        "description": "SMTP端口"
+      },
+      "smtp_user": {
+        "type": "string",
+        "default": "",
+        "description": "发信邮箱账号"
+      },
+      "smtp_password": {
+        "type": "string",
+        "default": "",
+        "description": "邮箱授权码（不是QQ密码！）"
+      },
+      "smtp_encryption": {
+        "type": "string",
+        "default": "ssl",
+        "description": "加密方式：ssl, tls, none"
+      },
+      "from_name": {
+        "type": "string",
+        "default": "Q群验证助手",
+        "description": "发件人显示名称"
+      },
+      "email_domain": {
+        "type": "string",
+        "default": "@qq.com",
+        "description": "用户邮箱后缀"
+      }
     }
   },
   "验证配置": {
-    "verification_mode": {
-      "type": "int",
-      "default": 0,
-      "description": "验证模式：0=用户自选，1=仅邮箱，2=仅数学题"
-    },
-    "email_cooldown": {
-      "type": "int",
-      "default": 60,
-      "description": "发送冷却时间（秒）"
-    },
-    "verification_timeout": {
-      "type": "int",
-      "default": 600,
-      "description": "验证超时秒数"
-    },
-    "kick_delay": {
-      "type": "int",
-      "default": 10,
-      "description": "踢出延迟（秒）"
+    "items": {
+      "verification_mode": {
+        "type": "int",
+        "default": 0,
+        "description": "验证模式：0=用户自选，1=仅邮箱，2=仅数学题"
+      },
+      "email_cooldown": {
+        "type": "int",
+        "default": 60,
+        "description": "发送冷却时间（秒）"
+      },
+      "verification_timeout": {
+        "type": "int",
+        "default": 600,
+        "description": "验证超时秒数"
+      },
+      "kick_delay": {
+        "type": "int",
+        "default": 10,
+        "description": "踢出延迟（秒）"
+      }
     }
   },
   "显示配置": {
-    "enable_code_image": {
-      "type": "bool",
-      "default": true,
-      "description": "是否生成验证码图片"
-    },
-    "email_template_choice": {
-      "type": "int",
-      "default": 1,
-      "description": "邮件模板：1-5预置模板，0=自定义"
+    "items": {
+      "enable_code_image": {
+        "type": "bool",
+        "default": true,
+        "description": "是否生成验证码图片"
+      },
+      "email_template_choice": {
+        "type": "int",
+        "default": 1,
+        "description": "邮件模板：1-5预置模板，0=自定义"
+      }
     }
   }
 }
