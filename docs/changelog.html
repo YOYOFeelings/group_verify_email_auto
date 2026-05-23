@@ -38,8 +38,18 @@
         <div id="changelog-container">
           <div class="version-card latest">
             <div class="version">
-              v1.15.0
+              v1.16.0
               <span class="badge">最新</span>
+            </div>
+            <ul class="changes">
+              <li>修复验证模式处理: 增强对非标准验证模式值的容错处理</li>
+              <li>当 verification_mode 不为 0/1/2 时默认回退到模式 0（用户自选）</li>
+              <li>添加更详细的日志输出，便于调试</li>
+            </ul>
+          </div>
+          <div class="version-card">
+            <div class="version">
+              v1.15.0
             </div>
             <ul class="changes">
               <li>网站UI修复: 所有子页面统一深色科技风CSS设计系统</li>

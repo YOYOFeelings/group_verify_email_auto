@@ -297,7 +297,7 @@ class VerificationManager:
                                   admin_list=admin_list)
             segs = [At(qq=int(uid)), Plain(" " + msg)]
         else:
-            logger.debug(f"使用模式0(用户自选)")
+            logger.debug(f"使用模式0(用户自选) - 模式值: {self.verification_mode}")
             if self.mode_0_menu_prompt:
                 msg = self._format_msg(self.mode_0_menu_prompt, member_name=nickname,
                                       group_name=group_name, group_member_count=member_count,
