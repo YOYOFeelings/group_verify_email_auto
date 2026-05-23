@@ -88,11 +88,7 @@ class GroupVerifyEmailAuto(Star):
         welcome_image = get_conf("welcome_image", "")
         enable_email_bg_image = get_conf("enable_email_background_image", False)
         email_bg_url = get_conf("email_background_image_url", "") if enable_email_bg_image else ""
-
-        # ✨ 新增配置项：验证码图片 & 引用消息
-        enable_code_image = get_conf("enable_code_image", True)
-        enable_reply_message = get_conf("enable_reply_message", True)
-        logger.info(f"新特性配置 | code_img={enable_code_image} | reply_msg={enable_reply_message}")
+        logger.info(f"新特性配置 | welcome_img={enable_welcome_image} | bg_url={enable_email_bg_image}")
 
         msg_templates = {
             "trigger": get_conf("trigger_prompt", "..."),
@@ -121,9 +117,6 @@ class GroupVerifyEmailAuto(Star):
             welcome_image=welcome_image,
             email_bg_url=email_bg_url,
             verification_mode=self.verification_mode,
-            # ✨ 传入新参数
-            enable_code_image=enable_code_image,
-            enable_reply_message=enable_reply_message,
             data_dir=DATA_DIR
         )
         logger.info("VerificationManager 初始化完成")

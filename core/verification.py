@@ -7,7 +7,6 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List
 from .email_utils import async_send_verification, build_email_html_sync, get_next_bg_url
-from .email_utils import generate_code_image, cleanup_code_image, set_code_image_dir
 from astrbot.api.message_components import At, Plain, Image
 
 logger = logging.getLogger("GroupVerifyEmailAuto.verification")
@@ -41,8 +40,6 @@ class VerificationManager:
                  enable_welcome_image: bool = False, welcome_image: str = "",
                  email_bg_url: str = "",
                  verification_mode: int = 0,
-                 enable_code_image: bool = True,
-                 enable_reply_message: bool = True,
                  data_dir: str = ""):
         self.smtp_host = smtp_config["host"]
         self.smtp_port = smtp_config["port"]
@@ -70,8 +67,6 @@ class VerificationManager:
         self.welcome_image = welcome_image
         self.email_bg_url = email_bg_url
         self.verification_mode = verification_mode
-        self.enable_code_image = enable_code_image
-        self.enable_reply_message = enable_reply_message
         self.pending_mode: Dict[str, int] = {}
         self.math_pending: Dict[str, dict] = {}
         self.context = context
@@ -82,16 +77,8 @@ class VerificationManager:
         self._group_info_cache: Dict[str, dict] = {}
         self._group_cache_ttl = 120  # 缓存120秒
 
-        # 初始化验证码图片目录
-        if data_dir:
-            code_img_dir = os.path.join(data_dir, "code_images")
-        else:
-            code_img_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "code_images")
-        set_code_image_dir(code_img_dir)
-        logger.info(f"验证码图片目录已设置: {code_img_dir}")
-
         logger.info(f"VerificationManager 参数 | timeout={self.verify_timeout} | cooldown={self.cooldown} | "
-                    f"bg_url={self.email_bg_url} | code_img={self.enable_code_image} | reply_msg={self.enable_reply_message}")
+                    f"bg_url={self.email_bg_url}")
 
     async def _get_group_info(self, event, gid) -> dict:
         """获取群信息（带缓存），返回 {member_count, admins, name}"""
@@ -141,6 +128,7 @@ class VerificationManager:
             "timeout": overrides.get("timeout", str(self.verify_timeout // 60)),
             "countdown": overrides.get("countdown", ""),
             "code": overrides.get("code", ""),
+            "group_image": f"[CQ:image,file={self.email_bg_url}]" if self.email_bg_url else "",
         }
         kwargs.update(overrides)
         return _safe_format(template, **kwargs)
@@ -429,16 +417,6 @@ class VerificationManager:
             sent = self._format_msg(self.sent_prompt, **fmt_kwargs)
             segs = [At(qq=int(uid)), Plain(" " + sent)]
 
-            # 生成并显示验证码图片 ✨
-            if self.enable_code_image:
-                try:
-                    img_path = await asyncio.to_thread(generate_code_image, code, uid)
-                    if img_path and os.path.exists(img_path):
-                        segs.append(Image.fromFileSystem(img_path))
-                        logger.info(f"验证码图片已附加到消息 | user={uid}")
-                except Exception as e:
-                    logger.error(f"验证码图片生成失败 | user={uid} | error={e}")
-
             await self._send_with_reply(event, uid, segs)
             logger.info(f"验证码发送成功 | user={uid} | email={email} | code={code}")
             event.stop_event()
@@ -483,13 +461,6 @@ class VerificationManager:
             err = self._format_msg(self.wrong_prompt, **fmt_kwargs)
 
             segs = [At(qq=int(uid)), Plain(" " + err)]
-            if self.enable_code_image:
-                try:
-                    img_path = await asyncio.to_thread(generate_code_image, new_code, uid)
-                    if img_path and os.path.exists(img_path):
-                        segs.append(Image.fromFileSystem(img_path))
-                except Exception as e:
-                    logger.error(f"验证码图片生成失败(重发) | user={uid} | error={e}")
             await self._send_with_reply(event, uid, segs)
             event.stop_event()
 
