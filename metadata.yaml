@@ -1,7 +1,7 @@
 name: group_verify_email_auto
 display_name: QQ群邮箱验证码插件
 author: 感情
-version: "1.5"
+version: "1.7"
 short_desc: 基于邮箱验证码的入群验证插件，支持数学题验证
 description: >
   基于邮箱验证码 + 数学题双模式入群验证插件。

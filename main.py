@@ -23,7 +23,7 @@ def _fix_newlines(s: str) -> str:
     return s.replace('\\n', '\n')
 
 
-@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.5",
+@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.7",
           "https://github.com/YOYOFeelings/group_verify_email_auto")
 class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):
