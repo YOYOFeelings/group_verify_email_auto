@@ -20,13 +20,22 @@ def _safe_format(s: str, **kwargs) -> str:
     """安全格式化字符串"""
     if not s:
         return s
+    # 先检查是否为非字符串
+    if not isinstance(s, str):
+        s = str(s)
     try:
         return s.format(**kwargs)
     except KeyError:
+        # 使用正则替换单个变量
         def _repl(m):
             key = m.group(1)
             return str(kwargs.get(key, m.group(0)))
         return re.sub(r'\{(\w+)\}', _repl, s)
+    except Exception as e:
+        # 其他异常时返回原始字符串
+        logger.error(f"格式化字符串失败 | 原始值: {s} | 错误: {e}")
+        # 返回一个安全的默认值
+        return s
 
 
 class VerificationManager:
@@ -75,7 +84,24 @@ class VerificationManager:
         self._group_info_cache: Dict[str, dict] = {}
         self._group_cache_ttl = 120
         
-        logger.info(f"VerificationManager初始化 | mode={verification_mode} | return_skip={enable_return_skip}")
+        # 记录加载的模板
+        logger.info(f"VerificationManager初始化 | mode={verification_mode}")
+        logger.debug(f"trigger_prompt: {self.trigger_prompt[:50]}...")
+        logger.debug(f"mode_0_menu_prompt: {self.mode_0_menu_prompt[:50]}...")
+        logger.debug(f"sent_prompt: {self.sent_prompt[:50]}...")
+        logger.debug(f"welcome_msg: {self.welcome_msg[:50]}...")
+        
+        # 如果模板为空，设置默认值
+        if not self.trigger_prompt:
+            self.trigger_prompt = "{at_user} 欢迎加入本群！\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复任意消息以接收验证码到您的 QQ 邮箱。"
+        if not self.mode_0_menu_prompt:
+            self.mode_0_menu_prompt = "{at_user} 欢迎加入本群！🎉\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复数字选择验证方式：\n1 - 邮箱验证\n2 - 数学题验证"
+        if not self.sent_prompt:
+            self.sent_prompt = "{at_user} 验证码已发送到 {email}\n请查看邮件并在群内 @我 回复数字验证码。"
+        if not self.welcome_msg:
+            self.welcome_msg = "{at_user} 验证成功，欢迎您的加入！🎉\n本群当前共 {group_member_count} 位群友\n管理员：\n{admin_list}"
+        if not self.return_user_msg:
+            self.return_user_msg = "{at_user} 欢迎回来！{member_name}\n\n检测到您之前已经入过群并且验证成功过，\n本次将为您跳过验证流程。\n\n🎉 欢迎重新加入 {group_name}！"
 
     async def _get_group_info(self, event, gid):
         """获取群信息（带缓存）"""
@@ -226,7 +252,13 @@ class VerificationManager:
             msg = self._format_msg("请在 {timeout} 分钟内 @我 并回答以下问题完成验证：\n" + q,
                                     timeout=str(timeout_min))
             segs = [At(qq=int(uid)), Plain(" " + msg)]
+            
+            # 调试日志
+            logger.debug(f"准备发送数学题验证消息 | user={uid} | group={gid} | msg长度: {len(msg)}")
+            logger.debug(f"消息内容: {msg[:100]}...")
+            
             await event.send(event.chain_result(segs))
+            logger.info(f"数学题验证消息发送成功 | user={uid} | group={gid}")
             return
         elif self.verification_mode == 1:
             msg = self._format_msg(self.trigger_prompt, member_name=nickname,
@@ -255,7 +287,17 @@ class VerificationManager:
             except Exception as e:
                 logger.error(f"欢迎图片失败: {e}")
         
+        # 调试日志
+        logger.debug(f"准备发送消息 | user={uid} | group={gid} | msg长度: {len(msg)}")
+        logger.debug(f"消息内容: {msg[:100]}...")
+        
+        # 确保消息不为空
+        if not msg or msg.isspace():
+            logger.warning("消息为空，使用默认消息")
+            msg = f"{At(qq=int(uid))} 欢迎加入本群！请 @我 选择验证方式。"
+        
         await event.send(event.chain_result(segs))
+        logger.info(f"消息发送成功 | user={uid} | group={gid}")
 
     async def member_decrease(self, event):
         uid = str(event.message_obj.raw_message.get("user_id"))

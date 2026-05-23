@@ -30,17 +30,30 @@ def _flatten_config(config: Dict[str, Any]) -> Dict[str, Any]:
         return {}
     result = {}
     for key, value in config.items():
-        if isinstance(value, dict) and "items" in value:
-            for sub_key, sub_value in value.get("items", {}).items():
-                result[sub_key] = sub_value.get("default")
-        elif isinstance(value, dict) and "default" in value:
-            result[key] = value["default"]
+        if isinstance(value, dict):
+            if "items" in value:
+                # 分组配置：{ "分组名": { "type": "object", "items": { ... } } }
+                for sub_key, sub_value in value.get("items", {}).items():
+                    if isinstance(sub_value, dict):
+                        # 从 default 中获取值
+                        result[sub_key] = sub_value.get("default")
+                    else:
+                        result[sub_key] = sub_value
+            elif "default" in value:
+                # 直接有 default 的配置
+                result[key] = value["default"]
+            else:
+                # 普通的配置项
+                result[key] = value
         else:
+            # 直接添加值
             result[key] = value
+    logger.info(f"扁平化配置完成 | 配置项数量: {len(result)}")
+    logger.debug(f"扁平化配置内容: {result}")
     return result
 
 
-@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.8",
+@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.8.1",
           "https://github.com/YOYOFeelings/group_verify_email_auto")
 class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):
@@ -113,17 +126,34 @@ class GroupVerifyEmailAuto(Star):
         enable_return_skip = get_conf("enable_return_user_skip", True)
         logger.info(f"图片配置 | welcome={enable_welcome_image} | bg={enable_email_bg_image} | return_skip={enable_return_skip}")
 
-        msg_templates = {
-            "trigger": get_conf("trigger_prompt", "..."),
-            "mode_0_menu": get_conf("mode_0_menu_prompt", "..."),
-            "sent": get_conf("email_sent_prompt", "..."),
-            "wrong": get_conf("wrong_code_prompt", "..."),
-            "welcome": get_conf("welcome_message", "..."),
-            "warning": get_conf("countdown_warning_prompt", "..."),
-            "failure": get_conf("failure_message", "..."),
-            "kick": get_conf("kick_message", "..."),
-            "return_user": get_conf("return_user_message", "...")
+        # 定义默认消息模板，防止配置读取失败
+        DEFAULT_TEMPLATES = {
+            "trigger": "{at_user} 欢迎加入本群！\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复任意消息以接收验证码到您的 QQ 邮箱。",
+            "mode_0_menu": "{at_user} 欢迎加入本群！🎉\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复数字选择验证方式：\n1 - 邮箱验证\n2 - 数学题验证",
+            "sent": "{at_user} 验证码已发送到 {email}\n请查看邮件并在群内 @我 回复数字验证码。",
+            "wrong": "{at_user} 验证码错误，新的验证码已发送到 {email}\n请重新查看并回复。",
+            "welcome": "{at_user} 验证成功，欢迎您的加入！🎉\n本群当前共 {group_member_count} 位群友\n管理员：\n{admin_list}",
+            "warning": "{at_user} 验证即将超时，请尽快输入收到的验证码！",
+            "failure": "{at_user} 验证超时，您将在 {countdown} 秒后被请出本群。",
+            "kick": "{at_user} 因未在规定时间内完成验证，已被请出本群。",
+            "return_user": "{at_user} 欢迎回来！{member_name}\n\n检测到您之前已经入过群并且验证成功过，\n本次将为您跳过验证流程。\n\n🎉 欢迎重新加入 {group_name}！"
         }
+        
+        msg_templates = {
+            "trigger": get_conf("trigger_prompt", DEFAULT_TEMPLATES["trigger"]),
+            "mode_0_menu": get_conf("mode_0_menu_prompt", DEFAULT_TEMPLATES["mode_0_menu"]),
+            "sent": get_conf("email_sent_prompt", DEFAULT_TEMPLATES["sent"]),
+            "wrong": get_conf("wrong_code_prompt", DEFAULT_TEMPLATES["wrong"]),
+            "welcome": get_conf("welcome_message", DEFAULT_TEMPLATES["welcome"]),
+            "warning": get_conf("countdown_warning_prompt", DEFAULT_TEMPLATES["warning"]),
+            "failure": get_conf("failure_message", DEFAULT_TEMPLATES["failure"]),
+            "kick": get_conf("kick_message", DEFAULT_TEMPLATES["kick"]),
+            "return_user": get_conf("return_user_message", DEFAULT_TEMPLATES["return_user"])
+        }
+        
+        # 记录加载的模板
+        for key, value in msg_templates.items():
+            logger.debug(f"消息模板[{key}] 长度: {len(str(value))} | 内容: {str(value)[:50]}...")
         logger.info("消息模板加载完成")
 
         smtp_cfg = {"host": smtp_host, "port": smtp_port, "user": smtp_user,
