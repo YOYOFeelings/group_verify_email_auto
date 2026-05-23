@@ -46,6 +46,12 @@ class AdminHandler:
         return uid in self.admins
 
     async def handle_command(self, event, uid, text, raw):
+        # 修复：添加管理员指令调试日志 - 2026-05-23
+        logger.info(f"管理员指令调用 | uid={uid} | is_admin={self.is_admin(uid)} | text={text}")
+        if not self.is_admin(uid):
+            logger.warning(f"非管理员尝试使用指令 | uid={uid}")
+            return False
+
         gid = raw.get("group_id")
         logger.info(f"管理员指令 | user={uid} | cmd={text}")
 

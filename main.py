@@ -79,7 +79,7 @@ def _flatten_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.11",
+@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.12.1",
           "https://github.com/YOYOFeelings/group_verify_email_auto")
 class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):
@@ -296,24 +296,17 @@ class GroupVerifyEmailAuto(Star):
         return result
 
     def _extract_admin_command(self, text: str) -> str:
-        """从消息中提取管理员指令（去除艾特部分）"""
+        """从消息中提取管理员指令（去除艾特部分），改进正则匹配"""
         if not text:
             return ""
-        
         text = text.strip()
-        
-        cq_at_patterns = [
-            r'\[CQ:at,qq=\d+\]\s*',
-            r'\[CQ:at,qq=\d+\]',
-        ]
-        for pattern in cq_at_patterns:
-            text = re.sub(pattern, '', text)
-        
-        text = re.sub(r'@[\w\u4e00-\u9fa5]+\s*', '', text)
-        
+        # 修复：更全面的 CQ 码匹配，支持 at 后可能有空格或换行 - 2026-05-23
+        text = re.sub(r'\[CQ:at,qq=\d+\](\s*)?', '', text)
+        # 匹配 @昵称（中文、英文、数字、下划线等），并移除后面的空白
+        text = re.sub(r'@[\w\u4e00-\u9fa5]+(\s*)?', '', text)
         text = text.strip()
-        
-        logger.debug(f"提取指令结果 | raw={text[:50] if text else 'empty'}")
+        if not text:
+            return ""
         return text
 
     @filter.event_message_type(filter.EventMessageType.ALL)
@@ -350,10 +343,12 @@ class GroupVerifyEmailAuto(Star):
                     await self.verification.member_decrease(event)
             elif post_type == "message":
                 if raw.get("message_type") == "group":
-                    if gid and not self._is_group_enabled(gid):
-                        logger.info(f"群隔离拦截 | group={gid} 不在启用列表中")
-                        return
                     uid = str(event.get_sender_id())
+                    # 修复：管理员指令不受群隔离限制 - 2026-05-23
+                    is_admin = self.admin_handler.is_admin(uid)
+                    if not is_admin and gid and not self._is_group_enabled(gid):
+                        logger.info(f"群隔离拦截非管理员 | group={gid} | user={uid}")
+                        return
                     text = event.message_str.strip() if event.message_str else ""
                     bot_id = str(event.get_self_id())
                     logger.debug(f"收到群消息 | group={gid} | user={uid} | text={text} | bot_id={bot_id}")
