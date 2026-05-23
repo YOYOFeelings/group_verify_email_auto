@@ -1212,6 +1212,35 @@ pre code {
     font-size: 0.9rem;
 }
 
+.screenshot-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.screenshot-item:hover {
+    border-color: var(--border-accent);
+    box-shadow: 0 8px 32px rgba(0, 164, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.screenshot-item img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.screenshot-caption {
+    display: block;
+    padding: 10px 16px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-align: center;
+    border-top: 1px solid var(--border);
+}
+
 /* ===== Content Section (for usage.html) ===== */
 .content-section {
     padding: 80px 0;
