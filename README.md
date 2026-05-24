@@ -1,6 +1,6 @@
 # 📧 QQ群邮箱验证码插件
 
-> ✨ **版本**：v1.16.0 | 👤 **作者**：YOYOFeelings | 📜 **协议**：MIT
+> ✨ **版本**：v1.16.0 | 👤 **作者**：感情 | 📜 **协议**：MIT
 >
 > 🌐 **官网**：https://yoyofeelings.github.io/group_verify_email_auto/
 
