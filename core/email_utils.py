@@ -218,6 +218,7 @@ def resolve_final_image_url(original_url: str, timeout: int = 2) -> str:
     if not original_url or not original_url.startswith("http"):
         return original_url
     try:
+        # 先尝试 HEAD 请求
         req = urllib.request.Request(original_url, method='HEAD')
         resp = urllib.request.urlopen(req, timeout=timeout)
         final = resp.geturl()
@@ -225,8 +226,18 @@ def resolve_final_image_url(original_url: str, timeout: int = 2) -> str:
         logger.info(f"[背景图] 解析成功 | source={original_url} | final={final}")
         return final
     except Exception as e:
-        logger.error(f"[背景图] 解析失败 | source={original_url} | error={e}")
-        return original_url
+        logger.warning(f"[背景图] HEAD请求失败，尝试GET请求 | source={original_url} | error={e}")
+        try:
+            # 备用方案：使用 GET 请求但不读取全部内容
+            req = urllib.request.Request(original_url)
+            resp = urllib.request.urlopen(req, timeout=timeout)
+            final = resp.geturl()
+            resp.close()
+            logger.info(f"[背景图] 解析成功(GET) | source={original_url} | final={final}")
+            return final
+        except Exception as e2:
+            logger.error(f"[背景图] 解析最终失败 | source={original_url} | error={e2}")
+            return original_url
 
 
 async def _fill_pool(api_url: str, count: int = 5):
@@ -290,9 +301,19 @@ async def get_next_bg_url(api_url: str) -> str:
             logger.info(f"[图片池] 取出背景图，剩余 {len(_bg_pool_deque)} 张")
             return url
 
-    # 池空时的应急方案
+    # 池空时的应急方案 - 增加超时保护
     logger.info("[图片池] 池空，临时解析一张背景图")
-    return await asyncio.to_thread(resolve_final_image_url, api_url)
+    try:
+        return await asyncio.wait_for(
+            asyncio.to_thread(resolve_final_image_url, api_url),
+            timeout=5
+        )
+    except asyncio.TimeoutError:
+        logger.warning("[图片池] 临时解析超时，返回原始URL")
+        return api_url
+    except Exception as e:
+        logger.error(f"[图片池] 临时解析出错: {e}")
+        return api_url
 
 # ==================== 邮件构建 ====================
 
@@ -300,7 +321,7 @@ async def get_next_bg_url(api_url: str) -> str:
 def build_email_html_sync(template: str, final_bg_url: str, group_name: str,
                           member_name: str, code: str, timeout_min: int) -> str:
     """同步构造验证邮件HTML，final_bg_url 为最终背景图链接（可空）"""
-    logger.debug(f"构造邮件HTML | final_bg={final_bg_url} | group={group_name} | code=******")  # 安全加固：日志验证码脱敏 - 2026-05-23
+    logger.debug(f"构造邮件HTML | final_bg={final_bg_url} | group={group_name} | code=******")
     bg_valid = bool(final_bg_url and final_bg_url.strip() and re.match(r'^https?://', final_bg_url.strip()))
     if not bg_valid and final_bg_url and final_bg_url.strip():
         logger.error(f"背景图链接格式无效 | url={final_bg_url}")
@@ -319,22 +340,40 @@ def build_email_html_sync(template: str, final_bg_url: str, group_name: str,
         logger.debug("降级为纯白卡片")
 
     html = template
+    
+    # 修复：更可靠的背景图移除逻辑
     if not bg_valid:
-        html = html.replace('background="{bg_url}"', '')
-        html = html.replace("background-image:url('{bg_url}');", '')
+        # 移除 table 标签上的 background 属性
+        html = re.sub(r'background="\{bg_url\}"', '', html, flags=re.IGNORECASE)
+        # 移除 style 中的 background-image
+        html = re.sub(r"background-image\s*:\s*url\s*\(\s*['\"]?\{bg_url\}['\"]?\s*\)\s*;", '', html, flags=re.IGNORECASE)
+        # 移除可能存在的 background 引用
+        html = re.sub(r'background\s*:\s*[^;]*\{bg_url\}[^;]*;', '', html, flags=re.IGNORECASE)
 
     html = html.replace('{card_style}', card_style)
 
-    # 安全加固：XSS防护 - 对用户输入进行HTML转义 - 2026-05-23
+    # 安全加固：XSS防护 - 对用户输入进行HTML转义
     safe_member_name = html.escape(member_name) if member_name else member_name
     safe_group_name = html.escape(group_name) if group_name else group_name
-    html = html.format(
-        group_name=safe_group_name,
-        member_name=safe_member_name,
-        code=code,
-        timeout=timeout_min,
-        bg_url=final_bg_url if bg_valid else ''
-    )
+    
+    # 修复：先替换简单的变量，避免 {bg_url} 被错误替换
+    try:
+        html = html.format(
+            group_name=safe_group_name,
+            member_name=safe_member_name,
+            code=code,
+            timeout=timeout_min,
+            bg_url=final_bg_url if bg_valid else ''
+        )
+    except KeyError as e:
+        logger.warning(f"模板变量替换失败，尝试备用方案: {e}")
+        # 备用方案：逐个替换
+        html = html.replace('{group_name}', safe_group_name)
+        html = html.replace('{member_name}', safe_member_name)
+        html = html.replace('{code}', code)
+        html = html.replace('{timeout}', str(timeout_min))
+        html = html.replace('{bg_url}', final_bg_url if bg_valid else '')
+    
     logger.debug(f"最终HTML长度: {len(html)}")
     return html
 
