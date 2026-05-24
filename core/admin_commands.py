@@ -15,7 +15,7 @@ LOG_EMAIL_FALLBACK = """<html><body><p>管理员 {member_name}，附件为运行
 class AdminHandler:
     def __init__(self, admin_qqs, smtp_config, email_config, time_config, msg_templates,
                  add_pending_func, verification_manager, log_file_path: str = None, db_manager=None):
-        self.admins = set(admin_qqs)
+        # admin_qqs 参数保留用于向后兼容，但现在主要使用数据库
         self.smtp_host = smtp_config["host"]
         self.smtp_port = smtp_config["port"]
         self.smtp_user = smtp_config["user"]
@@ -30,7 +30,7 @@ class AdminHandler:
         self.verification = verification_manager
         self.db = db_manager
         self.log_file_path = log_file_path or os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "email_verify.log"
+            os.path.dirname(os.path.abspath(__file__)), "..", "email_verify.log"
         )
 
         template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "templates", "log_email_template.html")
@@ -43,10 +43,12 @@ class AdminHandler:
             self.log_email_template = LOG_EMAIL_FALLBACK
 
     def is_admin(self, uid):
-        return uid in self.admins
+        """检查是否是管理员（使用新的数据库管理）"""
+        if not self.db:
+            return False
+        return self.db.is_admin(str(uid))
 
     async def handle_command(self, event, uid, text, raw):
-        # 修复：添加管理员指令调试日志 - 2026-05-23
         logger.info(f"管理员指令调用 | uid={uid} | is_admin={self.is_admin(uid)} | text={text}")
         if not self.is_admin(uid):
             logger.warning(f"非管理员尝试使用指令 | uid={uid}")
@@ -55,7 +57,39 @@ class AdminHandler:
         gid = raw.get("group_id")
         logger.info(f"管理员指令 | user={uid} | cmd={text}")
 
-        if text == "测试新人进群邮箱测试":
+        # ==================== 新增的管理员管理命令 ====================
+        
+        if text.startswith("添加管理员"):
+            await self._add_admin_command(event, uid, text, gid)
+            return True
+        elif text.startswith("移除管理员"):
+            await self._remove_admin_command(event, uid, text, gid)
+            return True
+        elif text in ["查看管理员", "管理员列表"]:
+            await self._list_admins(event, uid, gid)
+            return True
+        
+        # ==================== 新增的群隔离管理命令 ====================
+        
+        elif text.startswith("添加群"):
+            await self._add_group_command(event, uid, text, gid)
+            return True
+        elif text.startswith("移除群"):
+            await self._remove_group_command(event, uid, text, gid)
+            return True
+        elif text.startswith("启用群"):
+            await self._enable_group_command(event, uid, text, gid)
+            return True
+        elif text.startswith("禁用群"):
+            await self._disable_group_command(event, uid, text, gid)
+            return True
+        elif text in ["查看群", "群列表"]:
+            await self._list_groups(event, uid, gid)
+            return True
+        
+        # ==================== 原有命令保持不变 ====================
+        
+        elif text == "测试新人进群邮箱测试":
             await self._test_self(event, uid, None, gid)
             return True
         elif text.startswith("测试新人进群邮箱测试 "):
@@ -101,7 +135,7 @@ class AdminHandler:
         elif text == "查看用户记录":
             await self._view_user_records(event, uid, gid)
             return True
-        elif text == "查看函数":
+        elif text in ["查看函数", "查看命令", "帮助"]:
             await self._view_functions(event, uid, gid)
             return True
         return False
@@ -116,10 +150,214 @@ class AdminHandler:
         except Exception as e:
             logger.error(f"发送消息失败: {e}")
 
+    # ==================== 新增的管理员管理方法 ====================
+
+    async def _add_admin_command(self, event, uid, text, gid):
+        """添加管理员命令"""
+        if not self.db:
+            await self._safe_send(event, uid, gid, "数据库功能未启用")
+            return
+        
+        parts = text.split()
+        if len(parts) < 2 or not parts[1].isdigit():
+            await self._safe_send(event, uid, gid, "用法：添加管理员 <QQ号> [权限级别1-5]")
+            return
+        
+        target_qq = parts[1]
+        permission_level = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 1
+        
+        if permission_level < 1 or permission_level > 5:
+            await self._safe_send(event, uid, gid, "权限级别必须在1-5之间")
+            return
+        
+        try:
+            self.db.add_admin(target_qq, added_by=str(uid), permission_level=permission_level)
+            await self._safe_send(event, uid, gid, f"✅ 已添加管理员 {target_qq}，权限级别：{permission_level}")
+            logger.info(f"添加管理员 | operator={uid} | target={target_qq} | level={permission_level}")
+        except Exception as e:
+            await self._safe_send(event, uid, gid, f"❌ 添加管理员失败：{str(e)}")
+            logger.exception(f"添加管理员失败 | target={target_qq}")
+
+    async def _remove_admin_command(self, event, uid, text, gid):
+        """移除管理员命令"""
+        if not self.db:
+            await self._safe_send(event, uid, gid, "数据库功能未启用")
+            return
+        
+        parts = text.split()
+        if len(parts) < 2 or not parts[1].isdigit():
+            await self._safe_send(event, uid, gid, "用法：移除管理员 <QQ号>")
+            return
+        
+        target_qq = parts[1]
+        
+        try:
+            self.db.remove_admin(target_qq)
+            await self._safe_send(event, uid, gid, f"✅ 已移除管理员 {target_qq}")
+            logger.info(f"移除管理员 | operator={uid} | target={target_qq}")
+        except Exception as e:
+            await self._safe_send(event, uid, gid, f"❌ 移除管理员失败：{str(e)}")
+            logger.exception(f"移除管理员失败 | target={target_qq}")
+
+    async def _list_admins(self, event, uid, gid):
+        """列出所有管理员"""
+        if not self.db:
+            await self._safe_send(event, uid, gid, "数据库功能未启用")
+            return
+        
+        try:
+            admins = self.db.get_all_admins()
+            if not admins:
+                await self._safe_send(event, uid, gid, "当前没有管理员")
+                return
+            
+            lines = ["📋 管理员列表："]
+            for admin in admins:
+                name = admin["admin_nickname"] or "未知"
+                added_by = admin["added_by"] or "系统"
+                lines.append(f"• QQ: {admin['admin_qq']} | 昵称: {name} | 权限: {admin['permission_level']} | 添加者: {added_by}")
+            
+            await self._safe_send(event, uid, gid, "\n".join(lines))
+        except Exception as e:
+            await self._safe_send(event, uid, gid, f"获取管理员列表失败：{str(e)}")
+            logger.exception("获取管理员列表失败")
+
+    # ==================== 新增的群隔离管理方法 ====================
+
+    async def _add_group_command(self, event, uid, text, gid):
+        """添加群到白名单命令"""
+        if not self.db:
+            await self._safe_send(event, uid, gid, "数据库功能未启用")
+            return
+        
+        parts = text.split()
+        if len(parts) < 2 or not parts[1].isdigit():
+            # 如果没有指定群号，使用当前群
+            target_gid = str(gid) if gid else None
+            if not target_gid:
+                await self._safe_send(event, uid, gid, "用法：添加群 <群号> [描述]")
+                return
+        else:
+            target_gid = parts[1]
+        
+        description = " ".join(parts[2:]) if len(parts) > 2 else None
+        
+        try:
+            group_name = None
+            # 尝试获取群名称
+            try:
+                if gid:
+                    group_info = await event.bot.api.call_action("get_group_info", group_id=int(target_gid))
+                    group_name = group_info.get("group_name")
+            except:
+                pass
+            
+            self.db.add_group_to_whitelist(target_gid, group_name=group_name, added_by=str(uid), description=description)
+            await self._safe_send(event, uid, gid, f"✅ 已添加群 {target_gid} 到白名单{'，描述：' + description if description else ''}")
+            logger.info(f"添加群到白名单 | operator={uid} | group={target_gid}")
+        except Exception as e:
+            await self._safe_send(event, uid, gid, f"❌ 添加群失败：{str(e)}")
+            logger.exception(f"添加群失败 | group={target_gid}")
+
+    async def _remove_group_command(self, event, uid, text, gid):
+        """从白名单移除群命令"""
+        if not self.db:
+            await self._safe_send(event, uid, gid, "数据库功能未启用")
+            return
+        
+        parts = text.split()
+        if len(parts) < 2 or not parts[1].isdigit():
+            target_gid = str(gid) if gid else None
+            if not target_gid:
+                await self._safe_send(event, uid, gid, "用法：移除群 <群号>")
+                return
+        else:
+            target_gid = parts[1]
+        
+        try:
+            self.db.remove_group_from_whitelist(target_gid)
+            await self._safe_send(event, uid, gid, f"✅ 已从白名单移除群 {target_gid}")
+            logger.info(f"移除群从白名单 | operator={uid} | group={target_gid}")
+        except Exception as e:
+            await self._safe_send(event, uid, gid, f"❌ 移除群失败：{str(e)}")
+            logger.exception(f"移除群失败 | group={target_gid}")
+
+    async def _enable_group_command(self, event, uid, text, gid):
+        """启用群命令"""
+        if not self.db:
+            await self._safe_send(event, uid, gid, "数据库功能未启用")
+            return
+        
+        parts = text.split()
+        if len(parts) < 2 or not parts[1].isdigit():
+            target_gid = str(gid) if gid else None
+            if not target_gid:
+                await self._safe_send(event, uid, gid, "用法：启用群 <群号>")
+                return
+        else:
+            target_gid = parts[1]
+        
+        try:
+            self.db.enable_group(target_gid)
+            await self._safe_send(event, uid, gid, f"✅ 已启用群 {target_gid}")
+            logger.info(f"启用群 | operator={uid} | group={target_gid}")
+        except Exception as e:
+            await self._safe_send(event, uid, gid, f"❌ 启用群失败：{str(e)}")
+            logger.exception(f"启用群失败 | group={target_gid}")
+
+    async def _disable_group_command(self, event, uid, text, gid):
+        """禁用群命令"""
+        if not self.db:
+            await self._safe_send(event, uid, gid, "数据库功能未启用")
+            return
+        
+        parts = text.split()
+        if len(parts) < 2 or not parts[1].isdigit():
+            target_gid = str(gid) if gid else None
+            if not target_gid:
+                await self._safe_send(event, uid, gid, "用法：禁用群 <群号>")
+                return
+        else:
+            target_gid = parts[1]
+        
+        try:
+            self.db.disable_group(target_gid)
+            await self._safe_send(event, uid, gid, f"✅ 已禁用群 {target_gid}")
+            logger.info(f"禁用群 | operator={uid} | group={target_gid}")
+        except Exception as e:
+            await self._safe_send(event, uid, gid, f"❌ 禁用群失败：{str(e)}")
+            logger.exception(f"禁用群失败 | group={target_gid}")
+
+    async def _list_groups(self, event, uid, gid):
+        """列出所有白名单群"""
+        if not self.db:
+            await self._safe_send(event, uid, gid, "数据库功能未启用")
+            return
+        
+        try:
+            groups = self.db.get_all_whitelist_groups()
+            if not groups:
+                await self._safe_send(event, uid, gid, "当前没有白名单群")
+                return
+            
+            lines = ["📋 白名单群列表："]
+            for group in groups:
+                name = group["group_name"] or "未知"
+                status = "✅ 启用" if group["is_enabled"] == 1 else "❌ 禁用"
+                desc = f" | {group['description']}" if group['description'] else ""
+                lines.append(f"• 群号: {group['group_id']} | 名称: {name} | {status}{desc}")
+            
+            await self._safe_send(event, uid, gid, "\n".join(lines))
+        except Exception as e:
+            await self._safe_send(event, uid, gid, f"获取群列表失败：{str(e)}")
+            logger.exception("获取群列表失败")
+
+    # ==================== 原有方法保持不变 ====================
+
     async def _test_self(self, event, admin_uid, custom_code, gid):
         code = custom_code if custom_code else generate_code()
         email = f"{admin_uid}{self.email_domain}"
-        logger.info(f"管理员自测 | user={admin_uid} | email={email} | code=******")  # 安全加固：验证码脱敏 - 2026-05-23
+        logger.info(f"管理员自测 | user={admin_uid} | email={email} | code=******")
         await self._safe_send(event, admin_uid, gid, "正在发送测试邮件...")
         success, error_data = await self._send_mail(email, "管理员", "管理员测试", code)
         if success:
@@ -136,7 +374,7 @@ class AdminHandler:
     async def _test_to(self, event, admin_uid, target_qq, custom_code, gid):
         code = custom_code if custom_code else generate_code()
         email = f"{target_qq}{self.email_domain}"
-        logger.info(f"管理员向指定用户发送测试 | admin={admin_uid} | target={target_qq} | code=******")  # 安全加固：验证码脱敏 - 2026-05-23
+        logger.info(f"管理员向指定用户发送测试 | admin={admin_uid} | target={target_qq} | code=******")
         await self._safe_send(event, admin_uid, gid, f"正在发送测试邮件至 {email}...")
         success, error_data = await self._send_mail(email, f"QQ{target_qq}", "管理员指定测试", code)
         if success:
@@ -166,7 +404,7 @@ class AdminHandler:
 
         if bg_valid:
             card_style = ("background: rgba(255,255,255,0.75); "
-                          "backdrop-filter: blur(10px); border-radius: 12px;")
+                        "backdrop-filter: blur(10px); border-radius: 12px;")
         else:
             card_style = "background: #fff; border-radius: 12px;"
 
@@ -209,7 +447,7 @@ class AdminHandler:
             status_lines.append("\n未验证用户列表:")
             for uid, info in self.verification.pending.items():
                 email_status = "已发送" if info["email"] else "未发送"
-                status_lines.append(f"  - QQ:{uid} (邮箱:{info['email'] or '无'}, 状态:{email_status})")
+                status_lines.append(f"  • QQ:{uid} (邮箱:{info['email'] or '无'}, 状态:{email_status})")
         else:
             status_lines.append("\n当前无待验证用户")
         
@@ -222,17 +460,30 @@ class AdminHandler:
 
     async def _view_functions(self, event, admin_uid, gid):
         functions = [
-            "测试新人进群邮箱测试 - 向自己发送测试邮件",
-            "发送邮箱测试 <QQ号> - 向指定用户发送测试邮件",
-            "新人进群测试日志 - 发送运行日志到邮箱",
-            "插件状态 - 查看插件当前状态",
-            "查看配置 - 查看简要配置信息",
-            "新人进群验证 [QQ号] - 手动触发验证菜单",
-            "发送数据到邮箱 - 发送验证数据统计报告",
-            "查看统计数据 - 查看验证统计信息",
-            "查看用户记录 - 查看最近用户验证记录"
+            "【管理员管理】",
+            "  • 添加管理员 <QQ号> [权限1-5] - 添加全局管理员",
+            "  • 移除管理员 <QQ号> - 移除全局管理员",
+            "  • 查看管理员/管理员列表 - 查看所有管理员",
+            "",
+            "【群隔离管理】",
+            "  • 添加群 [群号] [描述] - 添加群到白名单（不带群号则添加当前群）",
+            "  • 移除群 [群号] - 从白名单移除群",
+            "  • 启用群 [群号] - 启用指定群",
+            "  • 禁用群 [群号] - 禁用指定群",
+            "  • 查看群/群列表 - 查看所有白名单群",
+            "",
+            "【原有功能】",
+            "  • 测试新人进群邮箱测试 - 向自己发送测试邮件",
+            "  • 发送邮箱测试 <QQ号> - 向指定用户发送测试邮件",
+            "  • 新人进群测试日志 - 发送运行日志到邮箱",
+            "  • 插件状态 - 查看插件当前状态",
+            "  • 查看配置 - 查看简要配置信息",
+            "  • 新人进群验证 [QQ号] - 手动触发验证菜单",
+            "  • 发送数据到邮箱 - 发送验证数据统计报告",
+            "  • 查看统计数据 - 查看验证统计信息",
+            "  • 查看用户记录 - 查看最近用户验证记录",
         ]
-        msg = "管理员指令列表:\n" + "\n".join(f"• {f}" for f in functions)
+        msg = "📋 完整命令列表：\n" + "\n".join(functions)
         await self._safe_send(event, admin_uid, gid, msg)
 
     async def _trigger_verify_menu(self, event, admin_uid, target_qq, gid):
@@ -267,7 +518,6 @@ class AdminHandler:
         logger.info(f"管理员触发验证 | admin={admin_uid} | target={uid} | group={gid}")
 
     async def _send_data_report(self, event, admin_uid, gid):
-        """发送数据报告到管理员邮箱"""
         if not self.db:
             await self._safe_send(event, admin_uid, gid, "数据库功能未启用，无法生成报告")
             return
@@ -296,7 +546,6 @@ class AdminHandler:
             logger.exception(f"生成报告失败: {e}")
 
     async def _view_statistics(self, event, admin_uid, gid):
-        """查看统计数据"""
         if not self.db:
             await self._safe_send(event, admin_uid, gid, "数据库功能未启用")
             return
@@ -318,7 +567,6 @@ class AdminHandler:
             logger.exception(f"获取统计失败: {e}")
 
     async def _view_user_records(self, event, admin_uid, gid):
-        """查看用户记录"""
         if not self.db:
             await self._safe_send(event, admin_uid, gid, "数据库功能未启用")
             return
@@ -329,7 +577,7 @@ class AdminHandler:
                 await self._safe_send(event, admin_uid, gid, "暂无验证记录")
                 return
 
-            lines = ["📝 最近验证记录:\n"]
+            lines = ["📝 最近验证记录：\n"]
             for i, rec in enumerate(records[:10], 1):
                 result = "✅" if rec['verification_result'] == 1 else "❌" if rec['verification_result'] == 0 else "⏳"
                 mode = "邮箱" if rec['verification_mode'] == 1 else "数学题" if rec['verification_mode'] == 2 else "自选"

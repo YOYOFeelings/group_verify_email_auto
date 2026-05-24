@@ -125,10 +125,24 @@ class GroupVerifyEmailAuto(Star):
             val = merged_config.get(key, default)
             return _fix_newlines(val) if isinstance(val, str) else val
 
-        self.enabled_groups = [str(g) for g in get_conf("enabled_groups", [])]
-        self.admin_qqs = [str(q) for q in get_conf("admin_qqs", [])]
+        # 从配置文件迁移旧的管理员和群数据到数据库（向后兼容）
+        config_enabled_groups = [str(g) for g in get_conf("enabled_groups", [])]
+        config_admin_qqs = [str(q) for q in get_conf("admin_qqs", [])]
+        
+        # 迁移旧的管理员数据到新的数据库表
+        for admin_qq in config_admin_qqs:
+            if not self.db.is_admin(admin_qq):
+                self.db.add_admin(admin_qq, added_by="config_migration", permission_level=2)
+                logger.info(f"迁移旧配置管理员 | qq={admin_qq}")
+        
+        # 迁移旧的群数据到新的数据库表
+        for group_id in config_enabled_groups:
+            if not self.db.is_group_enabled(group_id):
+                self.db.add_group_to_whitelist(group_id, added_by="config_migration", description="从旧配置迁移")
+                logger.info(f"迁移旧配置群 | group={group_id}")
+        
         self.verification_mode = int(get_conf("verification_mode", 0))
-        logger.info(f"配置加载 | enabled_groups={self.enabled_groups} | admin_qqs={self.admin_qqs} | mode={self.verification_mode}")
+        logger.info(f"配置加载 | 使用新的数据库管理系统 | mode={self.verification_mode}")
 
         smtp_host = get_conf("smtp_host", "smtp.qq.com")
         smtp_port = int(get_conf("smtp_port", 465))
@@ -238,7 +252,7 @@ class GroupVerifyEmailAuto(Star):
 
         log_file_path = os.path.join(DATA_DIR, "email_verify.log")
         self.admin_handler = AdminHandler(
-            self.admin_qqs, smtp_cfg, email_cfg, time_cfg, msg_templates,
+            [], smtp_cfg, email_cfg, time_cfg, msg_templates,
             _add_pending_cb,
             verification_manager=self.verification,
             log_file_path=log_file_path,
@@ -304,12 +318,20 @@ class GroupVerifyEmailAuto(Star):
             logger.error("SMTP 连通性检测失败，请检查配置")
 
     def _is_group_enabled(self, gid):
-        if not self.enabled_groups:
-            logger.debug(f"群隔离检查 | group={gid} | enabled=True (全群生效)")
-            return True
-        result = str(gid) in self.enabled_groups
-        logger.debug(f"群隔离检查 | group={gid} | enabled={result} | whitelist={self.enabled_groups}")
+        """检查群是否启用（使用新的数据库管理）"""
+        result = self.db.is_group_enabled(str(gid))
+        logger.debug(f"群隔离检查 | group={gid} | enabled={result}")
         return result
+    
+    def _is_admin_user(self, uid):
+        """检查用户是否是管理员（使用新的数据库管理）"""
+        return self.db.is_admin(str(uid))
+    
+    def _is_group_admin_user(self, gid, uid):
+        """检查用户是否是群专属管理员或全局管理员"""
+        if self._is_admin_user(uid):
+            return True
+        return self.db.is_group_admin(str(gid), str(uid))
 
     def _extract_admin_command(self, text: str) -> str:
         """从消息中提取管理员指令（去除艾特部分），改进正则匹配"""
@@ -361,8 +383,10 @@ class GroupVerifyEmailAuto(Star):
                 if raw.get("message_type") == "group":
                     uid = str(event.get_sender_id())
                     # 修复：管理员指令不受群隔离限制 - 2026-05-23
-                    is_admin = self.admin_handler.is_admin(uid)
-                    if not is_admin and gid and not self._is_group_enabled(gid):
+                    is_admin = self._is_admin_user(uid)
+                    is_group_admin = self._is_group_admin_user(gid, uid) if gid else False
+                    
+                    if not is_admin and not is_group_admin and gid and not self._is_group_enabled(gid):
                         logger.info(f"群隔离拦截非管理员 | group={gid} | user={uid}")
                         return
                     text = event.message_str.strip() if event.message_str else ""
@@ -382,7 +406,7 @@ class GroupVerifyEmailAuto(Star):
                         at_command = self._extract_admin_command(text)
                         logger.info(f"提取管理员指令 | user={uid} | cmd={at_command}")
                     
-                    if self.admin_handler.is_admin(uid) and is_at_me and at_command:
+                    if (is_admin or is_group_admin) and is_at_me and at_command:
                         logger.info(f"管理员触发指令 | user={uid} | cmd={at_command}")
                         handled = await self.admin_handler.handle_command(event, uid, at_command, raw)
                         if handled:
@@ -394,7 +418,7 @@ class GroupVerifyEmailAuto(Star):
                     uid = str(event.get_sender_id())
                     text = event.message_str.strip() if event.message_str else ""
                     logger.debug(f"收到私信 | user={uid} | text={text}")
-                    if self.admin_handler.is_admin(uid):
+                    if self._is_admin_user(uid):
                         handled = await self.admin_handler.handle_command(event, uid, text, raw)
                         if handled:
                             event.stop_event()

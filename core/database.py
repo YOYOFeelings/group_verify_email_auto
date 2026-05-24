@@ -45,26 +45,42 @@ class DatabaseManager:
             )
         ''')
         
-        # 管理员信息表
+        # 新的管理员表
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS admin_config (
+            CREATE TABLE IF NOT EXISTS admin_list (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 admin_qq TEXT UNIQUE NOT NULL,
                 admin_nickname TEXT,
-                add_time TEXT DEFAULT CURRENT_TIMESTAMP
+                added_by TEXT,
+                add_time TEXT DEFAULT CURRENT_TIMESTAMP,
+                permission_level INTEGER DEFAULT 1,
+                is_active INTEGER DEFAULT 1
             )
         ''')
         
-        # 群聊信息表
+        # 新的群隔离表
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS group_config (
+            CREATE TABLE IF NOT EXISTS group_whitelist (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 group_id TEXT UNIQUE NOT NULL,
                 group_name TEXT,
-                enabled INTEGER DEFAULT 1,
-                total_members INTEGER DEFAULT 0,
+                is_enabled INTEGER DEFAULT 1,
+                added_by TEXT,
                 add_time TEXT DEFAULT CURRENT_TIMESTAMP,
-                update_time TEXT
+                update_time TEXT,
+                description TEXT
+            )
+        ''')
+        
+        # 群管理员映射表
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS group_admins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_id TEXT NOT NULL,
+                admin_qq TEXT NOT NULL,
+                added_by TEXT,
+                add_time TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(group_id, admin_qq)
             )
         ''')
         
@@ -303,65 +319,216 @@ class DatabaseManager:
         conn.commit()
         conn.close()
     
-    def add_admin(self, admin_qq: str, admin_nickname: str = None):
+    # ==================== 管理员管理方法 ====================
+    
+    def add_admin(self, admin_qq: str, admin_nickname: str = None, added_by: str = None, permission_level: int = 1):
         """添加管理员"""
         conn = self._get_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT OR REPLACE INTO admin_config (admin_qq, admin_nickname, add_time)
-            VALUES (?, ?, ?)
-        ''', (admin_qq, admin_nickname, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            INSERT OR REPLACE INTO admin_list (admin_qq, admin_nickname, added_by, add_time, permission_level, is_active)
+            VALUES (?, ?, ?, ?, ?, 1)
+        ''', (admin_qq, admin_nickname, added_by, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), permission_level))
         
         conn.commit()
         conn.close()
-        logger.info(f"添加管理员 | qq={admin_qq}")
+        logger.info(f"添加管理员 | qq={admin_qq} | level={permission_level}")
     
-    def get_all_admins(self) -> List[Dict]:
-        """获取所有管理员"""
+    def remove_admin(self, admin_qq: str):
+        """移除管理员"""
         conn = self._get_connection()
         cursor = conn.cursor()
         
-        cursor.execute('SELECT admin_qq, admin_nickname, add_time FROM admin_config')
+        cursor.execute('DELETE FROM admin_list WHERE admin_qq = ?', (admin_qq,))
+        
+        conn.commit()
+        conn.close()
+        logger.info(f"移除管理员 | qq={admin_qq}")
+    
+    def is_admin(self, admin_qq: str) -> bool:
+        """检查是否是管理员"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT 1 FROM admin_list WHERE admin_qq = ? AND is_active = 1', (admin_qq,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        return result is not None
+    
+    def get_all_admins(self) -> List[Dict]:
+        """获取所有活跃管理员"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT admin_qq, admin_nickname, added_by, add_time, permission_level FROM admin_list WHERE is_active = 1')
         rows = cursor.fetchall()
         conn.close()
         
-        return [{"admin_qq": r[0], "admin_nickname": r[1], "add_time": r[2]} for r in rows]
+        return [
+            {"admin_qq": r[0], "admin_nickname": r[1], "added_by": r[2], 
+             "add_time": r[3], "permission_level": r[4]} for r in rows
+        ]
     
-    def add_or_update_group(self, group_id: str, group_name: str = None):
-        """添加或更新群聊信息"""
+    def get_admin_info(self, admin_qq: str) -> Optional[Dict]:
+        """获取指定管理员信息"""
         conn = self._get_connection()
         cursor = conn.cursor()
         
+        cursor.execute('SELECT admin_qq, admin_nickname, added_by, add_time, permission_level FROM admin_list WHERE admin_qq = ? AND is_active = 1', (admin_qq,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return {"admin_qq": row[0], "admin_nickname": row[1], "added_by": row[2], 
+                    "add_time": row[3], "permission_level": row[4]}
+        return None
+    
+    # ==================== 群隔离管理方法 ====================
+    
+    def add_group_to_whitelist(self, group_id: str, group_name: str = None, added_by: str = None, description: str = None):
+        """添加群到白名单"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
         cursor.execute('''
-            INSERT INTO group_config (group_id, group_name, update_time)
-            VALUES (?, ?, ?)
-            ON CONFLICT(group_id) DO UPDATE SET
-                group_name = excluded.group_name,
-                update_time = excluded.update_time
-        ''', (group_id, group_name, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            INSERT OR REPLACE INTO group_whitelist (group_id, group_name, is_enabled, added_by, add_time, update_time, description)
+            VALUES (?, ?, 1, ?, ?, ?, ?)
+        ''', (group_id, group_name, added_by, now, now, description))
         
         conn.commit()
         conn.close()
-        logger.info(f"更新群聊信息 | group={group_id} | name={group_name}")
+        logger.info(f"添加群到白名单 | group={group_id} | name={group_name}")
     
-    def get_all_groups(self) -> List[Dict]:
-        """获取所有群聊信息"""
+    def remove_group_from_whitelist(self, group_id: str):
+        """从白名单移除群"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('DELETE FROM group_whitelist WHERE group_id = ?', (group_id,))
+        
+        conn.commit()
+        conn.close()
+        logger.info(f"从白名单移除群 | group={group_id}")
+    
+    def enable_group(self, group_id: str):
+        """启用群"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        cursor.execute('UPDATE group_whitelist SET is_enabled = 1, update_time = ? WHERE group_id = ?', (now, group_id))
+        
+        conn.commit()
+        conn.close()
+        logger.info(f"启用群 | group={group_id}")
+    
+    def disable_group(self, group_id: str):
+        """禁用群"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        cursor.execute('UPDATE group_whitelist SET is_enabled = 0, update_time = ? WHERE group_id = ?', (now, group_id))
+        
+        conn.commit()
+        conn.close()
+        logger.info(f"禁用群 | group={group_id}")
+    
+    def is_group_enabled(self, group_id: str) -> bool:
+        """检查群是否启用"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT is_enabled FROM group_whitelist WHERE group_id = ?', (group_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        # 如果群不在白名单中，默认返回False（严格模式）
+        if row is None:
+            return False
+        
+        return row[0] == 1
+    
+    def get_all_whitelist_groups(self) -> List[Dict]:
+        """获取所有白名单群"""
         conn = self._get_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
-            SELECT group_id, group_name, enabled, total_members, add_time, update_time
-            FROM group_config
+            SELECT group_id, group_name, is_enabled, added_by, add_time, update_time, description
+            FROM group_whitelist
             ORDER BY update_time DESC
         ''')
         rows = cursor.fetchall()
         conn.close()
         
         return [{
-            "group_id": r[0], "group_name": r[1], "enabled": r[2],
-            "total_members": r[3], "add_time": r[4], "update_time": r[5]
+            "group_id": r[0], "group_name": r[1], "is_enabled": r[2],
+            "added_by": r[3], "add_time": r[4], "update_time": r[5], 
+            "description": r[6]
         } for r in rows]
+    
+    # ==================== 群管理员映射方法 ====================
+    
+    def add_group_admin(self, group_id: str, admin_qq: str, added_by: str = None):
+        """添加群专属管理员"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT OR REPLACE INTO group_admins (group_id, admin_qq, added_by, add_time)
+            VALUES (?, ?, ?, ?)
+        ''', (group_id, admin_qq, added_by, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        
+        conn.commit()
+        conn.close()
+        logger.info(f"添加群管理员 | group={group_id} | admin={admin_qq}")
+    
+    def remove_group_admin(self, group_id: str, admin_qq: str):
+        """移除群专属管理员"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('DELETE FROM group_admins WHERE group_id = ? AND admin_qq = ?', (group_id, admin_qq))
+        
+        conn.commit()
+        conn.close()
+        logger.info(f"移除群管理员 | group={group_id} | admin={admin_qq}")
+    
+    def is_group_admin(self, group_id: str, admin_qq: str) -> bool:
+        """检查是否是群专属管理员"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT 1 FROM group_admins WHERE group_id = ? AND admin_qq = ?', (group_id, admin_qq))
+        result = cursor.fetchone()
+        conn.close()
+        
+        return result is not None
+    
+    def get_group_admins(self, group_id: str) -> List[str]:
+        """获取群的专属管理员列表"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT admin_qq FROM group_admins WHERE group_id = ?', (group_id,))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return [r[0] for r in rows]
+    
+    # ==================== 兼容性方法（保留原有的方法名） ====================
+    
+    def add_or_update_group(self, group_id: str, group_name: str = None):
+        """添加或更新群聊信息（兼容性方法）"""
+        self.add_group_to_whitelist(group_id, group_name)
+    
+    def get_all_groups(self) -> List[Dict]:
+        """获取所有群聊信息（兼容性方法）"""
+        return self.get_all_whitelist_groups()
     
     def save_email_config(self, config_key: str, config_value: str):
         """保存邮件配置"""
