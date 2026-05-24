@@ -6,116 +6,191 @@
     <title>文档管理</title>
     <link rel="stylesheet" href="./css/style.css">
     <style>
+        /* Shadcn-inspired UI design */
+        :root {
+            --shadcn-bg: #0f172a;
+            --shadcn-card: #1e293b;
+            --shadcn-border: #334155;
+            --shadcn-accent: #00a4ff;
+            --shadcn-accent-light: #60a5fa;
+            --shadcn-text: #f8fafc;
+            --shadcn-muted: #94a3b8;
+            --shadcn-success: #10b981;
+            --shadcn-danger: #ef4444;
+        }
         .admin-section {
-            padding: 80px 32px;
-            max-width: 1000px;
+            padding: 40px 24px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         .admin-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+            background: var(--shadcn-card);
+            border: 1px solid var(--shadcn-border);
             border-radius: 12px;
-            padding: 28px;
+            padding: 32px;
             margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
         }
-        .login-form {
+        .login-wrapper {
             display: flex;
-            flex-direction: column;
-            gap: 16px;
-            max-width: 350px;
+            justify-content: center;
+            align-items: center;
+            min-height: 50vh;
         }
-        .login-input {
+        .login-box {
+            background: var(--shadcn-card);
+            border: 1px solid var(--shadcn-border);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        .login-box h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-align: center;
+            color: var(--shadcn-text);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--shadcn-text);
+            margin-bottom: 8px;
+        }
+        .form-input {
             width: 100%;
             padding: 12px 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
+            background: var(--shadcn-bg);
+            border: 1px solid var(--shadcn-border);
+            color: var(--shadcn-text);
             border-radius: 8px;
             font-size: 15px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        .login-btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, var(--accent), #00a4ff);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .docs-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 16px;
-        }
-        .doc-item {
-            background: var(--bg-card-hover);
-            border: 1px solid var(--border-accent);
-            border-radius: 8px;
-            padding: 16px;
-            cursor: pointer;
-        }
-        .doc-item:hover {
-            border-color: var(--accent);
-        }
-        .editor-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-        #editor {
-            width: 100%;
-            min-height: 450px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            font-family: Consolas, monospace;
-            font-size: 14px;
-            line-height: 1.7;
-            border-radius: 10px;
-            padding: 18px;
-            resize: vertical;
-        }
-        .toolbar {
-            display: flex;
-            gap: 10px;
+        .form-input:focus {
+            outline: none;
+            border-color: var(--shadcn-accent);
+            box-shadow: 0 0 0 3px rgba(0, 164, 255, 0.15);
         }
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             border: none;
+            font-size: 15px;
+            transition: all 0.2s ease;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #10b981, #34d399);
+            background: linear-gradient(135deg, var(--shadcn-accent), var(--shadcn-accent-light));
             color: white;
+            width: 100%;
         }
-        .btn-danger {
-            background: #ef4444;
-            color: white;
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         .btn-secondary {
             background: #334155;
             color: #cbd5e1;
+        }
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .doc-card {
+            background: var(--shadcn-card);
+            border: 1px solid var(--shadcn-border);
+            border-radius: 10px;
+            padding: 24px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .doc-card:hover {
+            border-color: var(--shadcn-accent);
+            transform: translateY(-2px);
+        }
+        .doc-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        .doc-name {
+            font-weight: 600;
+            color: var(--shadcn-text);
+            margin-bottom: 4px;
+        }
+        .doc-meta {
+            color: var(--shadcn-muted);
+            font-size: 13px;
+        }
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+        .admin-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--shadcn-text);
+        }
+        .header-right {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .editor-container {
+            margin-top: 20px;
+        }
+        #editor {
+            width: 100%;
+            min-height: 500px;
+            background: var(--shadcn-bg);
+            border: 1px solid var(--shadcn-border);
+            color: var(--shadcn-text);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            border-radius: 10px;
+            padding: 20px;
+            resize: vertical;
+            transition: border-color 0.2s ease;
+        }
+        #editor:focus {
+            outline: none;
+            border-color: var(--shadcn-accent);
         }
         .toast {
             position: fixed;
             bottom: 24px;
             right: 24px;
             padding: 14px 28px;
-            background: #10b981;
+            background: var(--shadcn-success);
             color: white;
             border-radius: 10px;
-            box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             display: none;
+            z-index: 1000;
         }
-        .password-note {
+        .help-text {
             font-size: 13px;
-            color: #94a3b8;
-            margin-top: -10px;
-        }
-        .password-note a {
-            color: var(--accent);
+            color: var(--shadcn-muted);
+            margin-top: 12px;
         }
     </style>
 </head>
@@ -136,36 +211,47 @@
     </nav>
 
     <section class="admin-section">
-        <h2 class="section-title" id="pageTitle">文档管理后台</h2>
-
         <!-- 登录区 -->
-        <div id="loginSection" class="admin-card">
-            <h3 style="margin-bottom:20px;">登录</h3>
-            <form class="login-form" id="loginForm">
-                <input type="password" class="login-input" id="passwordInput" placeholder="输入管理员密码" required>
-                <p class="password-note">默认密码: admin123，可在控制台通过 <code>localStorage.adminPassword = "新密码"</code> 修改</p>
-                <button type="submit" class="login-btn">登录</button>
-            </form>
+        <div id="loginSection">
+            <div class="login-wrapper">
+                <div class="login-box">
+                    <h1>🔐 文档管理后台</h1>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-input" id="passwordInput" placeholder="请输入密码" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">登录</button>
+                    </form>
+                    <p class="help-text">默认密码: admin123。<br>您可以在登录后修改密码。</p>
+                </div>
+            </div>
         </div>
 
         <!-- 文档管理区 -->
         <div id="adminSection" style="display:none;">
-            <div class="admin-card">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-                    <h3>文档列表</h3>
+            <div class="admin-header">
+                <h2>📁 文档管理</h2>
+                <div class="header-right">
+                    <button class="btn btn-secondary" onclick="showPasswordModal()">⚙️ 更改密码</button>
                     <button class="btn btn-secondary" onclick="createDoc()">+ 新建文档</button>
-                    <a href="#" onclick="logout()" style="color:#94a3b8;font-size:14px;margin-left:12px;">退出登录</a>
+                    <a href="#" onclick="logout()" style="color:var(--shadcn-muted);text-decoration:none;padding:8px 16px;">退出登录</a>
                 </div>
-                <div id="docsList" class="docs-list"></div>
+            </div>
+
+            <!-- 文档列表 -->
+            <div class="admin-card" id="listSection">
+                <h3 style="margin-bottom:20px;color:var(--shadcn-text);">文档列表</h3>
+                <div id="docsList" class="docs-grid"></div>
             </div>
 
             <!-- 编辑器区 -->
-            <div id="editorSection" class="admin-card" style="display:none;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-                    <h3 id="editingTitle">正在编辑</h3>
+            <div class="admin-card" id="editorSection" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+                    <h3 id="editingTitle" style="color:var(--shadcn-text);">正在编辑</h3>
                     <div class="toolbar">
                         <button class="btn btn-secondary" onclick="backToList()">← 返回列表</button>
-                        <button class="btn btn-primary" onclick="saveDoc()">💾 保存</button>
+                        <button class="btn btn-primary" onclick="saveDoc()" style="width:auto;">💾 保存</button>
                     </div>
                 </div>
                 <div class="editor-container">
@@ -173,14 +259,39 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+
+    <!-- 密码修改弹窗 -->
+    <div id="passwordModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:1000;">
+        <div class="login-box" style="background:var(--shadcn-card);">
+            <h2>更改密码</h2>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label class="form-label">当前密码</label>
+                    <input type="password" class="form-input" id="oldPwd" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">新密码</label>
+                    <input type="password" class="form-input" id="newPwd" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">确认新密码</label>
+                    <input type="password" class="form-input" id="confirmPwd" required>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <button type="button" class="btn btn-secondary" style="width:100%;" onclick="hidePasswordModal()">取消</button>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">确认更改</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div id="toast" class="toast"></div>
 
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-left">
-                <h3>QQ 群邮箱验证插件</h3>
+                <h3>QQ群邮箱验证插件</h3>
                 <p>作者: <a href="https://github.com/YOYOFeelings" target="_blank">感情</a></p>
             </div>
             <div class="footer-right">
@@ -199,33 +310,73 @@
     <script src="./js/main.js"></script>
 
     <script>
-        // 管理后台脚本
-        const PASSWORD_KEY = 'adminPassword';
-        const SESSION_KEY = 'adminLoggedIn';
+        // SHA-256 哈希函数
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
-        // 默认密码
+        // 常量
+        const PASSWORD_KEY = 'adminPasswordHash'; // 存储哈希值
+        const SESSION_KEY = 'adminLoggedIn';
+        const DEFAULT_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720'; // admin123 的 SHA-256
+
+        // 初始化 - 设置默认密码哈希（如果不存在）
         if (!localStorage.getItem(PASSWORD_KEY)) {
-            localStorage.setItem(PASSWORD_KEY, 'admin123');
+            localStorage.setItem(PASSWORD_KEY, DEFAULT_PASSWORD_HASH);
         }
 
         // 初始化
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             if (localStorage.getItem(SESSION_KEY) === 'true') {
                 showAdmin();
             }
         });
 
         // 登录
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const inputPwd = document.getElementById('passwordInput').value;
-            const correctPwd = localStorage.getItem(PASSWORD_KEY);
-            if (inputPwd === correctPwd) {
+            const inputHash = await sha256(inputPwd);
+            const correctHash = localStorage.getItem(PASSWORD_KEY);
+            if (inputHash === correctHash) {
                 localStorage.setItem(SESSION_KEY, 'true');
                 showAdmin();
             } else {
                 showToast('密码错误！', '#ef4444');
             }
+        });
+
+        // 密码修改
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const oldPwd = document.getElementById('oldPwd').value;
+            const newPwd = document.getElementById('newPwd').value;
+            const confirmPwd = document.getElementById('confirmPwd').value;
+
+            const oldHash = await sha256(oldPwd);
+            const currentHash = localStorage.getItem(PASSWORD_KEY);
+            if (oldHash !== currentHash) {
+                showToast('当前密码不正确', '#ef4444');
+                return;
+            }
+
+            if (newPwd !== confirmPwd) {
+                showToast('两次输入的密码不一致', '#ef4444');
+                return;
+            }
+
+            if (newPwd.length < 6) {
+                showToast('密码至少 6 位', '#ef4444');
+                return;
+            }
+
+            const newHash = await sha256(newPwd);
+            localStorage.setItem(PASSWORD_KEY, newHash);
+            hidePasswordModal();
+            showToast('密码修改成功！', '#10b981');
         });
 
         // 退出
@@ -246,13 +397,17 @@
             const container = document.getElementById('docsList');
             container.innerHTML = '';
             const docs = ['index.html','features.html','install.html','usage.html','faq.html','changelog.html','404.html','admin.html'];
-            docs.forEach(doc => {
+            for (const doc of docs) {
                 const div = document.createElement('div');
-                div.className = 'doc-item';
-                div.innerHTML = `<div><strong>📄 ${doc}</strong></div>`;
+                div.className = 'doc-card';
+                div.innerHTML = `
+                    <div class="doc-icon">📄</div>
+                    <div class="doc-name">${doc}</div>
+                    <div class="doc-meta">点击编辑</div>
+                `;
                 div.onclick = () => editDoc(doc);
                 container.appendChild(div);
-            });
+            }
         }
 
         // 编辑文档
@@ -262,7 +417,7 @@
                 const content = await r.text();
                 document.getElementById('editor').value = content;
                 document.getElementById('editingTitle').textContent = '正在编辑: ' + filename;
-                document.getElementById('docsList').parentElement.style.display = 'none';
+                document.getElementById('listSection').style.display = 'none';
                 document.getElementById('editorSection').style.display = 'block';
                 window.currentEditing = filename;
             } catch (e) {
@@ -304,7 +459,7 @@
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-left">
-                <h3>QQ 群邮箱验证插件</h3>
+                <h3>QQ群邮箱验证插件</h3>
                 <p>作者: <a href="https://github.com/YOYOFeelings" target="_blank">感情</a></p>
             </div>
             <div class="footer-right">
@@ -324,7 +479,7 @@
 </html>`;
             document.getElementById('editor').value = template;
             document.getElementById('editingTitle').textContent = '正在新建: ' + filename;
-            document.getElementById('docsList').parentElement.style.display = 'none';
+            document.getElementById('listSection').style.display = 'none';
             document.getElementById('editorSection').style.display = 'block';
             window.currentEditing = filename;
         }
@@ -332,7 +487,7 @@
         // 返回列表
         function backToList() {
             document.getElementById('editorSection').style.display = 'none';
-            document.getElementById('docsList').parentElement.style.display = 'block';
+            document.getElementById('listSection').style.display = 'block';
         }
 
         // 保存文档
@@ -350,6 +505,17 @@
             a.click();
             URL.revokeObjectURL(url);
             showToast('✅ 文档已下载，请手动上传/提交到 GitHub！', '#10b981');
+        }
+
+        // 密码弹窗
+        function showPasswordModal() {
+            document.getElementById('passwordModal').style.display = 'flex';
+        }
+        function hidePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('oldPwd').value = '';
+            document.getElementById('newPwd').value = '';
+            document.getElementById('confirmPwd').value = '';
         }
 
         // 提示框
