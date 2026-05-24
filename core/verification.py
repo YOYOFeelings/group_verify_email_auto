@@ -493,32 +493,38 @@ class VerificationManager:
             await event.send(event.chain_result(segs))
 
     async def _send_email_verification(self, event, uid, nickname, group_name):
-        """自动发送邮箱验证"""
+        """自动发送邮箱验证，失败时切换到数学题验证"""
         logger.info(f"邮箱验证开始 | user={uid} | nickname={nickname} | group={group_name}")
-        
+
         if not self._can_send(uid):
             logger.warning(f"邮箱验证冷却中 | user={uid}")
             await event.send(event.chain_result([
                 At(qq=int(uid)), Plain(f" 操作太频繁，请 {self.cooldown} 秒后再试")
             ]))
             return
-        
+
         email = f"{uid}{self.email_domain}"
         code = generate_code()
-        
+
         logger.info(f"准备发送验证码邮件 | user={uid} | email={email} | code=******")
-        
+
         success, error_data = await self._send_mail(email, nickname, group_name, code)
         if not success:
-            logger.error(f"邮件发送失败 | user={uid} | email={email} | error={error_data}")
-            error_msg = error_data[0] if error_data else "邮件发送失败，请稍后重试或联系管理员"
+            logger.error(f"邮件发送失败，自动切换到数学题验证 | user={uid} | email={email} | error={error_data}")
+            error_msg = error_data[0] if error_data else "邮件发送失败"
+            
+            # 切换到数学题验证
+            q, a = self._generate_math_problem()
+            self.math_pending[uid] = {"answer": a, "gid": self.pending[uid]["gid"]}
+            timeout_min = self.verify_timeout // 60
+            
             await event.send(event.chain_result([
-                At(qq=int(uid)), Plain(f" {error_msg}")
+                At(qq=int(uid)), Plain(f" {error_msg}，已自动为您切换到数学题验证。\n请在 {timeout_min} 分钟内 @我 并回答以下问题完成验证：\n{q}")
             ]))
             return
-        
+
         logger.info(f"邮件发送成功，更新 pending 记录 | user={uid}")
-        
+
         if uid in self.pending:
             self.pending[uid]["email"] = email
             self.pending[uid]["code"] = code
@@ -528,7 +534,7 @@ class VerificationManager:
                 self.pending[uid]["task"] = task
         else:
             logger.error(f"用户不在待验证队列中！| user={uid} | 这不应该发生")
-        
+
         sent = self._format_msg(self.sent_prompt, email=email, member_name=nickname)
         segs = [At(qq=int(uid)), Plain(" " + sent)]
         await event.send(event.chain_result(segs))
