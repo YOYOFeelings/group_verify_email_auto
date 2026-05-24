@@ -1,17 +1,17 @@
 {
   "基础配置": {
-    "description": "基础功能设置",
+    "description": "基础功能设置（注意：管理员和群隔离现在主要通过数据库管理，配置文件仅用于初始导入）",
     "type": "object",
     "items": {
       "enabled_groups": {
         "type": "list",
         "default": [],
-        "description": "启用的群号列表（留空全局生效）"
+        "description": "启用的群号列表（仅用于初始导入，之后请使用\"添加群\"命令管理）"
       },
       "admin_qqs": {
         "type": "list",
         "default": [],
-        "description": "管理员QQ号列表"
+        "description": "管理员QQ号列表（仅用于初始导入，之后请使用\"添加管理员\"命令管理）"
       },
       "verification_mode": {
         "type": "int",
