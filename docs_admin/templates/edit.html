@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑 {{ filename }}</title>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+    <nav class="admin-nav">
+        <a href="/admin" class="back-link">← 返回列表</a>
+        <h1>编辑: {{ filename }}</h1>
+        <div class="nav-right">
+            <button onclick="saveDoc()" class="save-btn">💾 保存</button>
+            <a href="/logout" class="logout-btn">退出登录</a>
+        </div>
+    </nav>
+
+    <div class="editor-container">
+        <textarea id="editor" spellcheck="false">{{ content }}</textarea>
+    </div>
+
+    <div id="toast" style="display: none; position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background: #10b981; color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);"></div>
+
+    <script>
+        function saveDoc() {
+            const content = document.getElementById('editor').value;
+            fetch('/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'filename=' + encodeURIComponent('{{ filename }}') + '&content=' + encodeURIComponent(content)
+            })
+            .then(r => r.json())
+            .then(d => {
+                const toast = document.getElementById('toast');
+                if (d.success) {
+                    toast.textContent = '✅ 保存成功！';
+                    toast.style.background = '#10b981';
+                    toast.style.display = 'block';
+                } else {
+                    toast.textContent = '❌ 保存失败: ' + d.message;
+                    toast.style.background = '#ef4444';
+                    toast.style.display = 'block';
+                }
+                setTimeout(() => toast.style.display = 'none', 3000);
+            });
+        }
+
+        // Ctrl+S 保存
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveDoc();
+            }
+        });
+    </script>
+</body>
+</html>

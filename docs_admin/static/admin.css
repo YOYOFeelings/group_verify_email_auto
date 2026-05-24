@@ -1,0 +1,235 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+}
+
+.admin-nav {
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+}
+
+.admin-nav h1 {
+    font-size: 18px;
+    color: #e5e7eb;
+    flex: 1;
+    text-align: center;
+}
+
+.admin-nav .back-link,
+.admin-nav .logout-btn {
+    text-decoration: none;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 6px;
+}
+
+.admin-nav .back-link:hover,
+.admin-nav .logout-btn:hover {
+    background: #334155;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px;
+}
+
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.header-actions h2 {
+    color: #f8fafc;
+    font-size: 24px;
+}
+
+.create-btn {
+    background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.create-btn:hover {
+    opacity: 0.9;
+}
+
+.docs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 16px;
+}
+
+.doc-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.doc-icon {
+    font-size: 32px;
+}
+
+.doc-info {
+    flex: 1;
+}
+
+.doc-info h3 {
+    font-size: 16px;
+    color: #e5e7eb;
+    margin-bottom: 4px;
+}
+
+.doc-info p {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.doc-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-btn {
+    background: #0ea5e9;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.delete-btn {
+    background: #475569;
+    color: #94a3b8;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.delete-btn:hover {
+    background: #64748b;
+}
+
+.editor-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 32px 32px;
+}
+
+#editor {
+    width: 100%;
+    min-height: calc(100vh - 200px);
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 20px;
+    color: #e5e7eb;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+#editor:focus {
+    outline: none;
+    border-color: #0ea5e9;
+}
+
+.save-btn {
+    background: #10b981;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.modal-content h3 {
+    color: #f8fafc;
+    margin-bottom: 16px;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    border-radius: 6px;
+    color: #e5e7eb;
+    margin-bottom: 16px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.cancel-btn {
+    background: #475569;
+    color: #94a3b8;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.confirm-btn {
+    background: #0ea5e9;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.empty-state {
+    text-align: center;
+    color: #64748b;
+    grid-column: 1 / -1;
+    padding: 60px;
+}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档管理后台</title>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+    <nav class="admin-nav">
+        <h1>文档管理后台</h1>
+        <div class="nav-right">
+            <a href="/logout" class="logout-btn">退出登录</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-actions">
+            <h2>文档列表</h2>
+            <button onclick="showCreateModal()" class="create-btn">+ 新建文档</button>
+        </div>
+
+        <div class="docs-grid">
+            {% for doc in docs %}
+                <div class="doc-card">
+                    <div class="doc-icon">📄</div>
+                    <div class="doc-info">
+                        <h3>{{ doc.filename }}</h3>
+                        <p>最后修改: {{ doc.mtime|int }}</p>
+                    </div>
+                    <div class="doc-actions">
+                        <a href="/edit/{{ doc.filename }}" class="edit-btn">编辑</a>
+                        <a href="/delete/{{ doc.filename }}" class="delete-btn" onclick="return confirm('确定要删除这个文档吗？')">删除</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state">暂无文档，点击上方按钮新建！</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 新建文档弹窗 -->
+    <div id="createModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>新建文档</h3>
+            <input type="text" id="newFilename" placeholder="输入文档名（无需 .html）">
+            <div class="modal-actions">
+                <button onclick="hideCreateModal()" class="cancel-btn">取消</button>
+                <button onclick="createDoc()" class="confirm-btn">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showCreateModal() {
+            document.getElementById('createModal').style.display = 'flex';
+        }
+        function hideCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+            document.getElementById('newFilename').value = '';
+        }
+        function createDoc() {
+            const filename = document.getElementById('newFilename').value.trim();
+            if (!filename) return alert('请输入文档名');
+            fetch('/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'filename=' + encodeURIComponent(filename)
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    window.location.href = '/edit/' + d.filename;
+                } else {
+                    alert(d.message);
+                }
+            });
+        }
+        document.getElementById('createModal').addEventListener('click', (e) => {
+            if (e.target.id === 'createModal') hideCreateModal();
+        });
+    </script>
+</body>
+</html>
