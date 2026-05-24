@@ -7,7 +7,8 @@ import secrets  # 安全加固：用于生成密码学安全的随机验证码 -
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List
-from .email_utils import async_send_verification, build_email_html_sync, get_next_bg_url
+from ..utils.email import async_send_verification, build_email_html_sync
+from ..utils.image import get_next_bg_url
 from astrbot.api.message_components import At, Plain, Image
 
 VERIFY_CODE_LENGTH = 6  # 安全加固：验证码位数常量 - 2026-05-23

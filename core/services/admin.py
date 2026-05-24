@@ -4,7 +4,8 @@ import logging
 import asyncio
 import time
 from datetime import datetime
-from .email_utils import async_send_verification, async_send_log_attachment, get_next_bg_url, build_email_html_sync
+from ..utils.email import async_send_verification, async_send_log_attachment, build_email_html_sync
+from ..utils.image import get_next_bg_url
 from .verification import generate_code
 
 logger = logging.getLogger("GroupVerifyEmailAuto.admin_commands")

@@ -7,11 +7,13 @@ from astrbot.api import logger as api_logger
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.core.star.star_tools import StarTools
-from .core.logger_setup import get_plugin_logger
-from .core.email_utils import init_smtp_check, init_image_pool
-from .core.admin_commands import AdminHandler
-from .core.verification import VerificationManager
-from .core.database import DatabaseManager
+from .core.utils.logger import get_plugin_logger
+from .core.utils.email import init_smtp_check
+from .core.utils.image import init_image_pool
+from .core.services.admin import AdminHandler
+from .core.services.verification import VerificationManager
+from .core.models.database import DatabaseManager
+from .core.config import _flatten_config, merge_config, load_message_templates, get_config_value
 
 DATA_DIR = StarTools.get_data_dir("group_verify_email_auto")
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -19,83 +21,7 @@ get_plugin_logger(log_dir=DATA_DIR)
 logger = logging.getLogger("GroupVerifyEmailAuto.main")
 
 
-def _fix_newlines(s: str) -> str:
-    if not isinstance(s, str):
-        return s
-    return s.replace('\\n', '\n')
-
-
-def _flatten_config(config: Dict[str, Any]) -> Dict[str, Any]:
-    """将分组配置扁平化为一级配置"""
-    if not config:
-        logger.debug("传入的配置为空，返回空字典")
-        return {}
-    
-    logger.debug(f"开始扁平化配置 | 原始配置: {config}")
-    result = {}
-    
-    def process_dict(d: Dict[str, Any], prefix: str = ""):
-        """递归处理配置字典"""
-        for key, value in d.items():
-            logger.debug(f"处理键: {prefix}{key} | 类型: {type(value)} | 值: {value}")
-            if isinstance(value, dict):
-                # 检查是否是配置项类型
-                if "type" in value:
-                    value_type = value["type"]
-                    if value_type == "object" and "items" in value:
-                        # 这是分组配置，继续处理 items
-                        logger.debug(f"发现 object 分组: {prefix}{key}，继续处理 items")
-                        if isinstance(value["items"], dict):
-                            process_dict(value["items"], prefix)
-                        continue
-                    elif value_type == "list":
-                        # 列表类型配置项 - 修复：先检查 items 是否为数组
-                        if "items" in value and isinstance(value["items"], list):
-                            # items 是数组（如枚举选项），保存整个配置结构
-                            result[key] = value
-                            logger.debug(f"添加列表类型配置(数组 items): {key}")
-                            continue
-                        elif "items" in value and isinstance(value["items"], dict):
-                            # items 是对象（如 schema），递归处理
-                            process_dict(value["items"], prefix)
-                            continue
-                    # 其他类型或有 default 的情况 - 继续执行下面的 default 处理
-                    
-                    if "default" in value:
-                        # 这是单个配置项，从 default 获取值
-                        default_val = value["default"]
-                        result[key] = default_val
-                        logger.debug(f"添加配置项: {key} = {default_val} (类型: {type(default_val)})")
-                    else:
-                        # 没有 default 的配置项，保存原始值
-                        result[key] = value
-                        logger.debug(f"添加配置项(无 default): {key} = {value}")
-                elif "default" in value:
-                    # 直接有 default 的配置
-                    default_val = value["default"]
-                    result[key] = default_val
-                    logger.debug(f"添加配置项(直接 default): {key} = {default_val} (类型: {type(default_val)})")
-                elif "items" in value:
-                    # 直接有 items 的配置（没有 type）
-                    logger.debug(f"发现 items 分组: {prefix}{key}，继续处理")
-                    if isinstance(value["items"], dict):
-                        process_dict(value["items"], prefix)
-                else:
-                    # 普通的配置项，直接添加
-                    result[key] = value
-                    logger.debug(f"添加普通配置: {key} = {value}")
-            else:
-                # 直接添加值
-                result[key] = value
-                logger.debug(f"添加直接值: {key} = {value} (类型: {type(value)})")
-    
-    process_dict(config)
-    logger.info(f"扁平化配置完成 | 配置项数量: {len(result)}")
-    logger.debug(f"扁平化配置结果: {result}")
-    return result
-
-
-@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.12.1",
+@register("group_verify_email_auto", "感情", "QQ群邮箱验证码插件", "1.16.0",
           "https://github.com/YOYOFeelings/group_verify_email_auto")
 class GroupVerifyEmailAuto(Star):
     def __init__(self, context: Context, config: Dict[str, Any]):
@@ -117,17 +43,11 @@ class GroupVerifyEmailAuto(Star):
         logger.info(f"从数据库获取配置 | count={len(db_config)}")
 
         # 合并配置：优先使用面板配置，如果有则覆盖数据库配置
-        # 注意：这样确保用户在面板的修改能立即生效
-        merged_config = db_config.copy()
-        merged_config.update(flat_config)
-
-        def get_conf(key, default=None):
-            val = merged_config.get(key, default)
-            return _fix_newlines(val) if isinstance(val, str) else val
+        merged_config = merge_config(db_config, flat_config)
 
         # 从配置文件迁移旧的管理员和群数据到数据库（向后兼容）
-        config_enabled_groups = [str(g) for g in get_conf("enabled_groups", [])]
-        config_admin_qqs = [str(q) for q in get_conf("admin_qqs", [])]
+        config_enabled_groups = [str(g) for g in get_config_value(merged_config, "enabled_groups", [])]
+        config_admin_qqs = [str(q) for q in get_config_value(merged_config, "admin_qqs", [])]
         
         # 迁移旧的管理员数据到新的数据库表
         for admin_qq in config_admin_qqs:
@@ -141,23 +61,23 @@ class GroupVerifyEmailAuto(Star):
                 self.db.add_group_to_whitelist(group_id, added_by="config_migration", description="从旧配置迁移")
                 logger.info(f"迁移旧配置群 | group={group_id}")
         
-        self.verification_mode = int(get_conf("verification_mode", 0))
+        self.verification_mode = int(get_config_value(merged_config, "verification_mode", 0))
         logger.info(f"配置加载 | 使用新的数据库管理系统 | mode={self.verification_mode}")
 
-        smtp_host = get_conf("smtp_host", "smtp.qq.com")
-        smtp_port = int(get_conf("smtp_port", 465))
-        smtp_user = get_conf("smtp_user", "")
-        smtp_password = get_conf("smtp_password", "")
-        smtp_encryption = get_conf("smtp_encryption", "ssl")
-        from_name = get_conf("from_name", "Q群验证助手")
+        smtp_host = get_config_value(merged_config, "smtp_host", "smtp.qq.com")
+        smtp_port = int(get_config_value(merged_config, "smtp_port", 465))
+        smtp_user = get_config_value(merged_config, "smtp_user", "")
+        smtp_password = get_config_value(merged_config, "smtp_password", "")
+        smtp_encryption = get_config_value(merged_config, "smtp_encryption", "ssl")
+        from_name = get_config_value(merged_config, "from_name", "QQ群验证助手")
         logger.info(f"SMTP配置 | host={smtp_host} | port={smtp_port} | user={smtp_user}")
 
-        email_domain = get_conf("email_domain", "@qq.com")
-        email_subject = get_conf("email_subject", "{group_name} 入群验证码")
-        template_choice = int(get_conf("email_template_choice", 1))
+        email_domain = get_config_value(merged_config, "email_domain", "@qq.com")
+        email_subject = get_config_value(merged_config, "email_subject", "{group_name} 入群验证码")
+        template_choice = int(get_config_value(merged_config, "email_template_choice", 1))
         
         if template_choice == 0:
-            email_body = get_conf("email_body_html", "...")
+            email_body = get_config_value(merged_config, "email_body_html", "...")
             logger.info("使用自定义邮件模板")
         else:
             template_filename = {
@@ -174,53 +94,26 @@ class GroupVerifyEmailAuto(Star):
                     email_body = f.read()
                 logger.info(f"邮件模板加载: {template_filename}")
             else:
-                email_body = get_conf("email_body_html", "...")
+                email_body = get_config_value(merged_config, "email_body_html", "...")
                 logger.warning(f"模板文件不存在: {template_filename}")
         
         logger.info(f"邮箱配置 | domain={email_domain} | template={template_choice}")
 
-        verify_timeout = int(get_conf("verification_timeout", 600))
-        warning_time = int(get_conf("kick_countdown_warning_time", 120))
-        kick_delay = int(get_conf("kick_delay", 10))
-        cooldown = int(get_conf("email_cooldown", 60))
+        verify_timeout = int(get_config_value(merged_config, "verification_timeout", 600))
+        warning_time = int(get_config_value(merged_config, "kick_countdown_warning_time", 120))
+        kick_delay = int(get_config_value(merged_config, "kick_delay", 10))
+        cooldown = int(get_config_value(merged_config, "email_cooldown", 60))
         logger.info(f"时间配置 | timeout={verify_timeout}s | cooldown={cooldown}s")
 
-        enable_welcome_image = get_conf("enable_welcome_image", False)
-        welcome_image = get_conf("welcome_image", "")
-        enable_email_bg_image = get_conf("enable_email_background_image", False)
-        email_bg_url = get_conf("email_background_image_url", "") if enable_email_bg_image else ""
-        enable_return_skip = get_conf("enable_return_user_skip", True)
+        enable_welcome_image = get_config_value(merged_config, "enable_welcome_image", False)
+        welcome_image = get_config_value(merged_config, "welcome_image", "")
+        enable_email_bg_image = get_config_value(merged_config, "enable_email_background_image", False)
+        email_bg_url = get_config_value(merged_config, "email_background_image_url", "") if enable_email_bg_image else ""
+        enable_return_skip = get_config_value(merged_config, "enable_return_user_skip", True)
         logger.info(f"图片配置 | welcome={enable_welcome_image} | bg={enable_email_bg_image} | return_skip={enable_return_skip}")
 
-        # 定义默认消息模板，防止配置读取失败
-        DEFAULT_TEMPLATES = {
-            "trigger": "{at_user} 欢迎加入本群！\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复任意消息以接收验证码到您的 QQ 邮箱。",
-            "mode_0_menu": "{at_user} 欢迎加入本群！🎉\n本群当前共 {group_member_count} 位群友\n管理员列表：\n{admin_list}\n请 @我 并回复数字选择验证方式：\n1 - 邮箱验证\n2 - 数学题验证",
-            "sent": "{at_user} 验证码已发送到 {email}\n请查看邮件并在群内 @我 回复数字验证码。",
-            "wrong": "{at_user} 验证码错误，新的验证码已发送到 {email}\n请重新查看并回复。",
-            "welcome": "{at_user} 验证成功，欢迎您的加入！🎉\n本群当前共 {group_member_count} 位群友\n管理员：\n{admin_list}",
-            "warning": "{at_user} 验证即将超时，请尽快输入收到的验证码！",
-            "failure": "{at_user} 验证超时，您将在 {countdown} 秒后被请出本群。",
-            "kick": "{at_user} 因未在规定时间内完成验证，已被请出本群。",
-            "return_user": "{at_user} 欢迎回来！{member_name}\n\n检测到您之前已经入过群并且验证成功过，\n本次将为您跳过验证流程。\n\n🎉 欢迎重新加入 {group_name}！"
-        }
-        
-        msg_templates = {
-            "trigger": get_conf("trigger_prompt", DEFAULT_TEMPLATES["trigger"]),
-            "mode_0_menu": get_conf("mode_0_menu_prompt", DEFAULT_TEMPLATES["mode_0_menu"]),
-            "sent": get_conf("email_sent_prompt", DEFAULT_TEMPLATES["sent"]),
-            "wrong": get_conf("wrong_code_prompt", DEFAULT_TEMPLATES["wrong"]),
-            "welcome": get_conf("welcome_message", DEFAULT_TEMPLATES["welcome"]),
-            "warning": get_conf("countdown_warning_prompt", DEFAULT_TEMPLATES["warning"]),
-            "failure": get_conf("failure_message", DEFAULT_TEMPLATES["failure"]),
-            "kick": get_conf("kick_message", DEFAULT_TEMPLATES["kick"]),
-            "return_user": get_conf("return_user_message", DEFAULT_TEMPLATES["return_user"])
-        }
-        
-        # 记录加载的模板
-        for key, value in msg_templates.items():
-            logger.debug(f"消息模板[{key}] 长度: {len(str(value))} | 内容: {str(value)[:50]}...")
-        logger.info("消息模板加载完成")
+        # 加载消息模板
+        msg_templates = load_message_templates(merged_config)
 
         smtp_cfg = {"host": smtp_host, "port": smtp_port, "user": smtp_user,
                     "password": smtp_password, "encryption": smtp_encryption,
@@ -232,7 +125,7 @@ class GroupVerifyEmailAuto(Star):
         self.verification = VerificationManager(
             smtp_cfg, email_cfg, time_cfg, msg_templates,
             self.context,
-            admin_qqs=self.admin_qqs,
+            admin_qqs=config_admin_qqs,
             enable_welcome_image=enable_welcome_image,
             welcome_image=welcome_image,
             email_bg_url=email_bg_url,
@@ -241,7 +134,7 @@ class GroupVerifyEmailAuto(Star):
             db_manager=self.db,
             data_dir=DATA_DIR
         )
-        logger.info("VerificationManager 初始化完成")
+        logger.info("VerificationManager初始化完成")
 
         # 初始化背景图连接池
         if enable_email_bg_image and email_bg_url:
@@ -252,21 +145,21 @@ class GroupVerifyEmailAuto(Star):
 
         log_file_path = os.path.join(DATA_DIR, "email_verify.log")
         self.admin_handler = AdminHandler(
-            [], smtp_cfg, email_cfg, time_cfg, msg_templates,
+            config_admin_qqs, smtp_cfg, email_cfg, time_cfg, msg_templates,
             _add_pending_cb,
             verification_manager=self.verification,
             log_file_path=log_file_path,
             db_manager=self.db
         )
-        logger.info("AdminHandler 初始化完成")
+        logger.info("AdminHandler初始化完成")
 
         asyncio.create_task(self._startup_check(smtp_host, smtp_port, smtp_user,
                                                 smtp_password, smtp_encryption))
         
         # 保存所有配置到数据库
         config_to_save = {
-            "enabled_groups": self.enabled_groups,
-            "admin_qqs": self.admin_qqs,
+            "enabled_groups": config_enabled_groups,
+            "admin_qqs": config_admin_qqs,
             "verification_mode": self.verification_mode,
             "smtp_host": smtp_host,
             "smtp_port": smtp_port,
@@ -309,13 +202,13 @@ class GroupVerifyEmailAuto(Star):
         logger.info("背景图连接池已就绪")
 
     async def _startup_check(self, host, port, user, pwd, encryption):
-        logger.info("开始 SMTP 连通性检测...")
+        logger.info("开始SMTP连通性检测...")
         await asyncio.sleep(2)
         ok = await init_smtp_check(host, port, user, pwd, encryption)
         if ok:
-            logger.info("SMTP 连通性检测通过")
+            logger.info("SMTP连通性检测通过")
         else:
-            logger.error("SMTP 连通性检测失败，请检查配置")
+            logger.error("SMTP连通性检测失败，请检查配置")
 
     def _is_group_enabled(self, gid):
         """检查群是否启用（使用新的数据库管理）"""
@@ -334,13 +227,11 @@ class GroupVerifyEmailAuto(Star):
         return self.db.is_group_admin(str(gid), str(uid))
 
     def _extract_admin_command(self, text: str) -> str:
-        """从消息中提取管理员指令（去除艾特部分），改进正则匹配"""
+        """从消息中提取管理员指令（去除艾特部分）"""
         if not text:
             return ""
         text = text.strip()
-        # 修复：更全面的 CQ 码匹配，支持 at 后可能有空格或换行 - 2026-05-23
         text = re.sub(r'\[CQ:at,qq=\d+\](\s*)?', '', text)
-        # 匹配 @昵称（中文、英文、数字、下划线等），并移除后面的空白
         text = re.sub(r'@[\w\u4e00-\u9fa5]+(\s*)?', '', text)
         text = text.strip()
         if not text:
@@ -382,7 +273,6 @@ class GroupVerifyEmailAuto(Star):
             elif post_type == "message":
                 if raw.get("message_type") == "group":
                     uid = str(event.get_sender_id())
-                    # 修复：管理员指令不受群隔离限制 - 2026-05-23
                     is_admin = self._is_admin_user(uid)
                     is_group_admin = self._is_group_admin_user(gid, uid) if gid else False
                     
@@ -394,13 +284,13 @@ class GroupVerifyEmailAuto(Star):
                     logger.debug(f"收到群消息 | group={gid} | user={uid} | text={text} | bot_id={bot_id}")
                     
                     is_at_me = False
-                    at_command = None
                     if isinstance(raw.get("message"), list):
                         for seg in raw.get("message"):
                             if seg.get("type") == "at" and str(seg.get("data", {}).get("qq")) == bot_id:
                                 is_at_me = True
                                 break
                     
+                    at_command = None
                     if is_at_me:
                         logger.debug(f"检测到艾特机器人 | user={uid} | text={text}")
                         at_command = self._extract_admin_command(text)
