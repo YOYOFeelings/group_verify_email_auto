@@ -22,7 +22,7 @@
     "list": [
       {"name": "感情", "link": "https://github.com/YOYOFeelings", "role": "项目作者与主要开发者"},
       {"name": "chatGPT-AI-API", "link": "https://github.com/chatGPT-AI-API", "role": "技术支持与AI能力集成"},
-      {"name": "TRAE SOLO", "link": "https://github.com/traeagent", "role": "网站开发与维护"}
+      {"name": "TRAE SOLO", "link": "https://github.com/traeagent", "role": "开发与维护"}
     ]
   }
 }
