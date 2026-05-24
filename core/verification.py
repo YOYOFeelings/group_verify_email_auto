@@ -193,7 +193,7 @@ class VerificationManager:
             old = self.pending[uid].get("task")
             if old and not old.done():
                 old.cancel()
-        is_admin = uid in self.admin_qqs
+        is_admin = self.db.is_admin(uid) if self.db else (uid in self.admin_qqs)
         join_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         task = asyncio.create_task(asyncio.sleep(0)) if is_admin else asyncio.create_task(self._timeout_kick(uid, gid, nickname))
         self.pending[uid] = {"gid": gid, "email": email, "code": code, "task": task, "time": time.time(), "join_time": join_time}
@@ -562,7 +562,7 @@ class VerificationManager:
         return success, error_data
 
     async def _timeout_kick(self, uid: str, gid: int, nickname: str):
-        if uid in self.admin_qqs:
+        if (self.db and self.db.is_admin(uid)) or (uid in self.admin_qqs):
             self.pending.pop(uid, None)
             return
         

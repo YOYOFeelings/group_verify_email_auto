@@ -129,6 +129,10 @@ class GroupVerifyEmailAuto(Star):
         config_enabled_groups = [str(g) for g in get_conf("enabled_groups", [])]
         config_admin_qqs = [str(q) for q in get_conf("admin_qqs", [])]
         
+        # 保存这些配置用于临时向后兼容
+        self.enabled_groups = config_enabled_groups
+        self.admin_qqs = config_admin_qqs
+        
         # 迁移旧的管理员数据到新的数据库表
         for admin_qq in config_admin_qqs:
             if not self.db.is_admin(admin_qq):
