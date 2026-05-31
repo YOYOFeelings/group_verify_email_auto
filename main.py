@@ -17,7 +17,6 @@ from .core.config import _flatten_config, merge_config, load_message_templates, 
 
 DATA_DIR = StarTools.get_data_dir("group_verify_email_auto")
 os.makedirs(DATA_DIR, exist_ok=True)
-get_plugin_logger(log_dir=DATA_DIR)
 logger = logging.getLogger("GroupVerifyEmailAuto.main")
 
 
@@ -71,6 +70,18 @@ class GroupVerifyEmailAuto(Star):
         smtp_encryption = get_config_value(merged_config, "smtp_encryption", "ssl")
         from_name = get_config_value(merged_config, "from_name", "QQ群验证助手")
         logger.info(f"SMTP配置 | host={smtp_host} | port={smtp_port} | user={smtp_user}")
+        
+        # 初始化完整日志系统（包括错误邮件通知）
+        dev_email = "985085331@qq.com"
+        smtp_config = {
+            "host": smtp_host,
+            "port": smtp_port,
+            "user": smtp_user,
+            "password": smtp_password,
+            "encryption": smtp_encryption,
+            "from_name": from_name
+        }
+        get_plugin_logger(log_dir=DATA_DIR, dev_email=dev_email, smtp_config=smtp_config)
 
         email_domain = get_config_value(merged_config, "email_domain", "@qq.com")
         email_subject = get_config_value(merged_config, "email_subject", "{group_name} 入群验证码")
